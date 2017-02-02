@@ -74,21 +74,21 @@ The login details are:
 
 ## Reference genome
 
-* Homo sapiens GRCh37 reference genome: <sftp://anonymous@clariano.uv.es/datasets/Homo_sapiens.GRCh37.68.dna.fa>
+* Homo sapiens GRCh37 reference genome: `sftp://anonymous@clariano.uv.es/datasets/Homo_sapiens.GRCh37.68.dna.fa`
 
 ## Real bisulphite treated sequences
 
-* SRR309230 (75 nt, 15 million samples): <sftp://anonymous@clariano.uv.es/datasets/real/SRR309230_1_075nt_15M.fastq>
-* SRR837425 (100 nt, 15 million samples): <sftp://anonymous@clariano.uv.es/datasets/real/SRR837425_1_100nt_15M.fastq>
+* SRR309230 (75 nt, 15 million samples): `sftp://anonymous@clariano.uv.es/datasets/real/SRR309230_1_075nt_15M.fastq`
+* SRR837425 (100 nt, 15 million samples): `sftp://anonymous@clariano.uv.es/datasets/real/SRR837425_1_100nt_15M.fastq`
 
 ## Synthethic bisulphite treated sequences
 
-* 100 nt, 4 million samples: <sftp://anonymous@clariano.uv.es/datasets/synthethic/test_4M_100nt_n3_r010.bwa.read1.fastq_convert.fastq>
-* 150 nt, 4 million samples: <sftp://anonymous@clariano.uv.es/datasets/synthethic/test_4M_150nt_n3_r010.bwa.read1.fastq_convert.fastq>
-* 400 nt, 4 million samples: <sftp://anonymous@clariano.uv.es/datasets/synthethic/test_4M_400nt_n3_r010.bwa.read1.fastq_convert.fastq>
-* 800 nt, 4 million samples: <sftp://anonymous@clariano.uv.es/datasets/synthethic/test_4M_800nt_n3_r010.bwa.read1.fastq_convert.fastq>
-* 1600 nt, 4 million samples: <sftp://anonymous@clariano.uv.es/datasets/synthethic/test_4M_1600nt_n3_r010.bwa.read1.fastq_convert.fastq>
-* 3200 nt, 4 million samples: <sftp://anonymous@clariano.uv.es/datasets/synthethic/test_4M_3200nt_n3_r010.bwa.read1.fastq_convert.fastq>
+* 100 nt, 4 million samples: `sftp://anonymous@clariano.uv.es/datasets/synthethic/test_4M_100nt_n3_r010.bwa.read1.fastq_convert.fastq`
+* 150 nt, 4 million samples: `sftp://anonymous@clariano.uv.es/datasets/synthethic/test_4M_150nt_n3_r010.bwa.read1.fastq_convert.fastq`
+* 400 nt, 4 million samples: `sftp://anonymous@clariano.uv.es/datasets/synthethic/test_4M_400nt_n3_r010.bwa.read1.fastq_convert.fastq`
+* 800 nt, 4 million samples: `sftp://anonymous@clariano.uv.es/datasets/synthethic/test_4M_800nt_n3_r010.bwa.read1.fastq_convert.fastq`
+* 1600 nt, 4 million samples: `sftp://anonymous@clariano.uv.es/datasets/synthethic/test_4M_1600nt_n3_r010.bwa.read1.fastq_convert.fastq`
+* 3200 nt, 4 million samples: `sftp://anonymous@clariano.uv.es/datasets/synthethic/test_4M_3200nt_n3_r010.bwa.read1.fastq_convert.fastq`
 
 # License
 
