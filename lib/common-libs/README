@@ -1,0 +1,32 @@
+
+Welcome OpenCB 'common-libs' library
+
+'common-libs' is a C library with common utilities. It's part of HPG project.
+
+
+COMPONENTS
+This library consist of:
+ * several common utilities for logs, string manipulation, workflows execution, ...
+ * several data structures under 'containers' folder: array_list, linke_list, ... other have been collected from different sources such as cprops or khash.
+
+
+CONTACT
+You can contact any of the following developers:
+ * Joaquin Tarraga (jtarraga@cipf.es)
+ * Cristina Y. Gonzalez (cgonzalez@cipf.es)
+ * Ignacio Medina (imedina@cipf.es)
+ * Hector Martinez (martineh@uji.es)
+
+BUILDING
+Scons is used as building system, to build the library download 'next' branch (for the most recent library) and execute:
+
+ $ scons
+
+GCC4.4+ is the only requirement.
+
+
+DOCUMENTATION
+You can find more info about HPG project and bioinfo-libs at:
+
+ http://wiki.opencb.org/projects/hpg/doku.php
+

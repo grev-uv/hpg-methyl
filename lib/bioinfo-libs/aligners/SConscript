@@ -1,0 +1,20 @@
+import os
+
+Import('env')
+
+aligners_env = env.Clone()
+aligners_env['objects'] = []
+
+# Targets
+aligners = ['bwt', 'sw']
+
+for dir in aligners:
+    SConscript(os.path.join(dir, 'SConscript'), exports = ['env', 'aligners_env'])
+
+aligners_env.Library('aligners', aligners_env['objects'])
+
+env['objects'] += aligners_env['objects']
+
+# Should traverse the tree and get the *.c files
+#aligners_env.SharedLibrary('aligners', aligners_env['objects'])
+

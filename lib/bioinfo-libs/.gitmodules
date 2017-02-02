@@ -1,0 +1,6 @@
+[submodule "lib/bioinfo-libs"]
+	path = lib/bioinfo-libs
+	url = git://localhost/bioinfo-c/libs/bioinfo-libs
+[submodule "lib/common-libs"]
+	path = lib/common-libs
+	url = git://localhost/bioinfo-c/libs/common-libs

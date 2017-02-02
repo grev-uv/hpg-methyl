@@ -1,0 +1,263 @@
+#include "gff_reader.h"
+
+static size_t lines = 1;
+static size_t num_records = 0;
+static size_t num_batches = 0;
+
+static gff_record_t *current_record;
+static gff_header_entry_t *current_header_entry;
+static gff_batch_t *current_batch;
+
+%%{
+    machine gff;
+    write data;
+
+    #############################################
+    #             Actions definition            #
+    #############################################
+
+    action linebreak {
+        lines++;
+//        printf("lines read = %d\n", lines);
+    }
+    
+    action header_entry_begin {
+        current_header_entry = gff_header_entry_new();
+        ts = p;
+    }
+
+    action header_entry_end {
+        set_gff_header_entry_text(ts, p-ts, current_header_entry);
+        add_gff_header_entry(current_header_entry, file);
+    }
+
+    action header_entry_error {
+        printf("Line %zu (%s): Error in header\n", lines, file->filename);
+    }
+
+    action record_begin {
+        current_record = gff_record_new();
+    }
+
+    action record_end {
+        // If batch is full, add to the list of batches and create a new, empty one
+        if (batch_size > 0 && current_batch->records->size == batch_size) {
+            list_item_t *item = list_item_new(num_records, 1, current_batch); 
+            list_insert_item(item, batches_list);
+//             printf("Batch %d added - %zu records\t", batches, current_batch->records->size);
+            current_batch = gff_batch_new(batch_size);
+            
+            if (p+1) {
+                current_batch->text = p+1;
+//                 printf("batch text = '%.*s'\n", 50, current_batch->text);
+            }
+            num_batches++;
+            num_records = 0;
+        }
+
+        // If not a blank line, add current record to current batch
+        add_record_to_gff_batch(current_record, current_batch);
+        num_records++;
+    }
+
+    action seqname_begin {
+        ts = p;
+    }
+
+    action seqname_end {
+        set_gff_record_sequence(ts, p-ts, current_record);
+    }
+
+    action seqname_error {
+        printf("Line %zu (%s): Error in 'seqname' field\n", num_batches * batch_size + num_records, file->filename);
+    }
+
+    action source_begin {
+        ts = p;
+    }
+
+    action source_end {
+        set_gff_record_source(ts, p-ts, current_record);
+    }
+
+    action source_error {
+        printf("Line %zu (%s): Error in 'source' field\n", num_batches * batch_size + num_records, file->filename);
+    }
+
+    action feature_begin {
+        ts = p;
+    }
+
+    action feature_end {
+        set_gff_record_feature(ts, p-ts, current_record);
+    }
+
+    action feature_error {
+        printf("Line %zu (%s): Error in 'feature' field\n", num_batches * batch_size + num_records, file->filename);
+    }
+
+    action start_begin {
+        ts = p;
+    }
+
+    action start_end {
+        char *field = strndup(ts, p-ts);
+        set_gff_record_start(atol(field), current_record);
+        free(field);
+    }
+
+    action start_error {
+        printf("Line %zu (%s): Error in 'start' field\n", num_batches * batch_size + num_records, file->filename);
+    }
+
+    action end_begin {
+        ts = p;
+    }
+
+    action end_end {
+        char *field = strndup(ts, p-ts);
+        set_gff_record_end(atol(field), current_record);
+        free(field);
+    }
+
+    action end_error {
+        printf("Line %zu (%s): Error in 'end' field\n", num_batches * batch_size + num_records, file->filename);
+    }
+
+    action score_begin {
+        ts = p;
+    }
+
+    action score_end {
+        float score = -1.0f;
+        if (strncmp(".", ts, 1) != 0) {
+            char *field = strndup(ts, p-ts);
+            score = atof(field);
+            free(field);
+        }
+        set_gff_record_score(score, current_record);
+    }
+
+    action score_error {
+        printf("Line %zu (%s): Error in 'score' field\n", num_batches * batch_size + num_records, file->filename);
+    }
+
+    action strand_begin {
+        ts = p;
+    }
+
+    action strand_end {
+        set_gff_record_strand(*ts, current_record);
+    }
+
+    action strand_error {
+        printf("Line %zu (%s): Error in 'strand' field\n", num_batches * batch_size + num_records, file->filename);
+    }
+
+    action frame_begin {
+        ts = p;
+    }
+
+    action frame_end {
+        set_gff_record_frame(*ts, current_record);
+    }
+
+    action frame_error {
+        printf("Line %zu (%s): Error in 'frame' field\n", num_batches * batch_size + num_records, file->filename);
+    }
+
+    action attribute_begin {
+        ts = p;
+    }
+
+    action attribute_end {
+        set_gff_record_attribute(ts, p-ts, current_record);
+    }
+
+    action attribute_error {
+        printf("Line %zu (%s): Error in 'attribute' field\n", num_batches * batch_size + num_records, file->filename);
+    }
+
+
+    #################################################
+    #               Machine definition              #
+    #################################################
+
+    number          = (digit)+ ("." (digit)+)? ;    # Integer or floating-point number
+    bases           = ("A" | "C" | "G" | "T" | "N")+ ;
+    identifier      = (alnum)+ ;
+
+    # Header
+    header_text     = (ascii)+ ;
+    header_entry    = "##" header_text >header_entry_begin %header_entry_end $err(header_entry_error) ;
+    header          = ( header_entry "\n" >linebreak )* ;
+
+    # Comment
+    comment         = "#" (print)+ ;
+
+    # Records
+    record_seqname  = (alnum | "_")+ ;
+    record_source   = (alnum | "_")+ | "." ;
+    record_feature  = (alnum | "_")+ | "." ;
+    record_start    = number ;
+    record_end      = number ;
+    record_score    = number | "." ;
+    record_strand   = "+" | "-" | "." ;
+    record_frame    = number | "." ;
+    record_attr     = (print - ("\n" | "\t"))+ ;
+
+    record	    = (record_seqname >seqname_begin %seqname_end $err(seqname_error) "\t" 
+                       record_source >source_begin %source_end $err(source_error) "\t" 
+                       record_feature >feature_begin %feature_end $err(feature_error) "\t" 
+                       record_start >start_begin %start_end $err(start_error) "\t" 
+                       record_end >end_begin %end_end $err(end_error) "\t" 
+                       record_score >score_begin %score_end $err(score_error) "\t" 
+                       record_strand >strand_begin %strand_end $err(strand_error) "\t" 
+                       record_frame >frame_begin %frame_end $err(frame_error) "\t" 
+                       record_attr? >attribute_begin %attribute_end $err(attribute_error))
+                       >record_begin %record_end ;
+    records         = record ("\n" >linebreak (record | comment))* ;
+
+    # Machine start
+    main           := (header)? ("\n")* (records)? ("\n")* ;
+
+
+}%%
+
+
+int gff_ragel_read(list_t *batches_list, size_t batch_size, gff_file_t *file) {
+    int cs;
+    char *p = file->data;
+    char *pe = p + file->data_len;
+    char *eof = pe;
+    char *ts, *te;
+    int stack[4];
+    int top, act;
+
+    current_header_entry = gff_header_entry_new();
+    current_batch = gff_batch_new(batch_size);
+
+    %%{
+        write init;
+        write exec;
+    }%% 
+
+    // Insert the last batch
+    if (!gff_batch_is_empty(current_batch)) {
+        list_item_t *item = list_item_new(num_records, 1, current_batch); 
+        list_insert_item(item, batches_list);
+        LOG_DEBUG_F("Batch added - %zu records (last)\n", current_batch->records->size);
+    }
+
+    if ( cs < %%{ write first_final; }%% ) {
+        LOG_INFO_F("Last state is %d, but %d was expected\n", 
+                cs, %%{ write first_final; }%%);
+    } 
+
+    LOG_INFO_F("GFF records read = %zu\n", num_batches * batch_size + num_records);
+
+    // Free current_xxx pointers if not needed in another module
+    //gff_header_entry_free(current_header_entry);
+
+    return cs < %%{ write first_final; }%%;
+}

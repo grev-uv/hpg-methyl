@@ -1,0 +1,13 @@
+
+*.o
+*.test
+bin/*
+containers/bin
+.sconf_temp
+.sconsign.dblite
+config.log
+*.a
+*~
+*anjuta*
+*sonar*
+*kdev*

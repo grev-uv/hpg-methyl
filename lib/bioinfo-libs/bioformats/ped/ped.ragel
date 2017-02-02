@@ -1,0 +1,204 @@
+#include "ped_reader.h"
+
+static size_t lines = 0;
+static size_t num_records = 0;
+static size_t genotype = 0;
+
+static ped_record_t *current_record;
+static ped_batch_t *current_batch;
+
+%%{
+    machine ped;
+    write data;
+
+    #############################################
+    #             Actions definition            #
+    #############################################
+
+    action linebreak {
+        lines++;
+    }
+
+    action record_begin {
+        current_record = create_ped_record();
+        genotype = 0;
+    }
+
+    action record_end {
+        // If batch is full, add to the list of batches and create a new, empty one
+        if (ped_batch_is_full(current_batch))
+        {
+            list_item_t *item = list_item_new(num_records, 1, current_batch);
+            list_insert_item(item, batches_list);
+            LOG_DEBUG_F("Batch added - %zu records\n", current_batch->length);
+            current_batch = ped_batch_new(batch_size);
+        }
+
+        // Add current record to current batch
+        if (current_record) {
+            add_record_to_ped_batch(current_record, current_batch);
+            num_records++;
+        }
+        current_record = NULL;
+    }
+
+    action family_begin {
+        ts = p;
+    }
+
+    action family_end {
+        set_ped_record_family_id(strndup(ts, p-ts), current_record);
+    }
+
+    action family_error {
+        printf("Line %zu (%s): Error in 'family' field\n", lines, file->filename);
+    }
+
+    action indiv_begin {
+        ts = p;
+    }
+
+    action indiv_end {
+        set_ped_record_individual_id(strndup(ts, p-ts), current_record);
+    }
+
+    action indiv_error {
+        printf("Line %zu (%s): Error in 'individual' field\n", lines, file->filename);
+    }
+
+    action father_begin {
+        ts = p;
+    }
+
+    action father_end {
+        if (strncmp("0", ts, 1)) {
+            set_ped_record_father_id(strndup(ts, p-ts), current_record);
+        }
+    }
+
+    action father_error {
+        printf("Line %zu (%s): Error in 'father' field\n", lines, file->filename);
+    }
+
+    action mother_begin {
+        ts = p;
+    }
+
+    action mother_end {
+        if (strncmp("0", ts, 1)) {
+            set_ped_record_mother_id(strndup(ts, p-ts), current_record);
+        }
+    }
+
+    action mother_error {
+        printf("Line %zu (%s): Error in 'mother' field\n", lines, file->filename);
+    }
+
+    action sex_begin {
+        ts = p;
+    }
+
+    action sex_end {
+        char *field = strndup(ts, p-ts);
+        enum Sex sex = UNKNOWN_SEX;
+        if (atoi(field) == 1) {
+            sex = MALE;
+        } else if (atoi(field) == 2) {
+            sex = FEMALE;
+        }
+        set_ped_record_sex(sex, current_record);
+        free(field);    // Not set as ped_record_t variable -> not freed later
+    }
+
+    action sex_error {
+        printf("Line %zu (%s): Error in 'sex' field\n", lines, file->filename);
+    }
+
+    action pheno_begin {
+        ts = p;
+    }
+
+    action pheno_end {
+        if (strncmp(".", ts, 1)) {
+            char *field = strndup(ts, p-ts);
+            float phenotype = atof(field);
+            set_ped_record_phenotype(phenotype, current_record);
+            free(field);
+        }
+    }
+
+    action pheno_error {
+        printf("Line %zu: Error in 'phenotype' field\n", lines);
+    }
+
+
+    #################################################
+    #               Machine definition              #
+    #################################################
+
+    number      = (digit)+ ("." (digit)+)? ;    # Integer or floating-point number
+    bases       = ("A" | "C" | "G" | "T" | "N")+ ;
+    identifier  = (alnum)+ ;
+
+    # Records
+    record_family   = (alnum | punct)+ ;
+    record_indiv    = (alnum | "_" )+ ;
+    record_parent   = (alnum | "_" )+ | "." ;
+    record_sex      = number | "." ;
+    record_pheno    = number ;
+
+    record      = (record_family >family_begin %family_end $err(family_error) [\t ] 
+                    record_indiv >indiv_begin %indiv_end $err(indiv_error) [\t ]
+                    record_parent >father_begin %father_end $err(father_error) [\t ]
+                    record_parent >mother_begin %mother_end $err(mother_error) [\t ]
+                    record_sex >sex_begin %sex_end $err(sex_error) [\t ] 
+                    record_pheno >pheno_begin %pheno_end $err(pheno_error) 
+                    ( any - "\n" )* 
+                    (space)* )
+                    >record_begin %record_end ;
+    records     =  record ("\n" >linebreak record)* ;
+
+    # Machine start
+    main        := (records)? ("\n")* ;
+
+
+}%%
+
+
+
+int ped_ragel_read(list_t *batches_list, size_t batch_size, ped_file_t *file)
+{
+    int cs;
+    char *p = file->data;
+    char *pe = p + file->data_len;
+    char *eof = pe;
+    char *ts, *te;
+    int stack[4];
+    int top, act;
+
+    current_batch = ped_batch_new(batch_size);
+
+    %%{
+        write init;
+        write exec;
+    }%% 
+
+    // Insert the last batch
+    if (!ped_batch_is_empty(current_batch))
+    {
+        list_item_t *item = list_item_new(num_records, 1, current_batch); 
+        list_insert_item(item, batches_list);
+        LOG_DEBUG_F("Batch added - %zu records (last)\n", current_batch->length);
+    }
+
+    if ( cs < %%{ write first_final; }%% ) 
+    {
+        LOG_ERROR("The file was not successfully read\n");
+        LOG_INFO_F("Last state is %d, but %d was expected\n", 
+                cs, %%{ write first_final; }%%);
+    } 
+
+    LOG_INFO_F("PED records read = %zu\n", num_records);
+
+    return cs < %%{ write first_final; }%%;
+}

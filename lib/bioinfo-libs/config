@@ -1,0 +1,26 @@
+[core]
+	repositoryformatversion = 0
+	filemode = true
+	bare = false
+	logallrefupdates = true
+[remote "origin"]
+	fetch = +refs/heads/*:refs/remotes/origin/*
+	url = hmartinez@repos:/var/local/gitrepos/bioinfo-c/libs/bioformats
+[branch "master"]
+	remote = origin
+	merge = refs/heads/master
+[remote "imedina"]
+	url = git://imedina/bioinfo-c/libs/bioformats
+	fetch = +refs/heads/*:refs/remotes/imedina/*
+[remote "jtarraga"]
+	url = git://jtarraga/bioinfo-c/libs/bioformats
+	fetch = +refs/heads/*:refs/remotes/jtarraga/*
+[remote "cgonzalez"]
+	url = git://cgonzalez/bioinfo-c/libs/bioformats
+	fetch = +refs/heads/*:refs/remotes/cgonzalez/*
+[remote "vrequena"]
+	url = git://vrequena/bioinfo-c/libs/bioformats
+	fetch = +refs/heads/*:refs/remotes/vrequena/*
+[branch "next"]
+	remote = imedina
+	merge = refs/heads/next

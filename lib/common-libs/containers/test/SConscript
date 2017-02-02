@@ -1,0 +1,16 @@
+import os
+
+commons_path = os.getcwd() + '/../../'
+
+env = Environment(CFLAGS = '-std=c99 -D_XOPEN_SOURCE=600 -D_GNU_SOURCE -fopenmp',
+                  CPPPATH = ['#', commons_path, '/usr/include', '/usr/local/include', commons_path ],
+                  LIBPATH = ['/usr/lib', '/usr/local/lib' ],
+                  LIBS = ['check', 'curl', 'm', 'z', 'rt'],
+                  LINKFLAGS = ['-fopenmp']
+                  )
+
+check_linked_list = env.Program('linked_list.test', 
+                    	         source = ['linked_list_test.c', 
+				           '%s/containers/linked_list.o' % commons_path
+                                          ]
+                                )

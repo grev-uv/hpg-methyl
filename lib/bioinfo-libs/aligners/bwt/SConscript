@@ -1,0 +1,8 @@
+Import('aligners_env')
+
+penv = aligners_env.Clone()
+penv['CFLAGS'] += ' -D_XOPEN_SOURCE=600 -DVECTOR_O_64BIT_COMPRESSION -g'
+
+# TODO: Remove fastq_batch_reader_omp so Glob can be used
+aligners_env['objects'] += penv.Object(Split('bwt.c bwt_bs.c BW_io.c BW_search.c BW_preprocess.c genome.c'))
+

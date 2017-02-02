@@ -1,0 +1,13 @@
+##gff version 3.0
+1	TeleGene	enhancer	10000000	10001000	500	+	.	touch1	
+1	TeleGene	promoter	10010000	10010100	900	+	.	touch1	
+2	TeleGene	enhancer	20000000	20001000	500	+	.	touch1	
+2	TeleGene	promoter	20010000	20010100	900	+	.	touch1	
+2	TeleGene	promoter	20020000	20025000	800	-	.	touch2	
+3	TeleGene	enhancer	30000000	30001000	500	+	.	touch1	
+3	TeleGene	promoter	30020000	30025000	800	-	.	touch2	
+20	TeleGene	promoter	20010000	20010100	900	+	.	touch1	
+22	TeleGene	enhancer	22000000	22001000	500	+	.	touch1	
+22	TeleGene	promoter	22010000	22010100	900	+	.	touch1	
+X	TeleGene	promoter	95020000	95025000	800	-	.	touch2	
+

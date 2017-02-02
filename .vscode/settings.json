@@ -1,0 +1,17 @@
+//-------------------------------------------------------
+// Visual Studio Code environment configuration for the
+// HPG-Methyl project.
+//
+// - Date: 15 / 11 / 2016
+// - Who: Cesar
+{
+    // Original code used a tabspace of 2, keep
+    // it like that.
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true,
+    "search.exclude": {
+        "../bin/": true,
+        "../nuevo/": true,
+        "../antiguo/": true
+    }
+}

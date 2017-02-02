@@ -1,0 +1,35 @@
+import os
+
+Import('penv')
+
+bioinfo_path = os.getcwd() + '/../../../'
+commons_path = os.getcwd() + '/../../../../common-libs/'
+
+
+env = Environment(CFLAGS = '-std=c99 -D_XOPEN_SOURCE=600 -D_GNU_SOURCE -fopenmp',
+                  CPPPATH = ['#', bioinfo_path, commons_path, '/usr/include', '/usr/local/include' ],
+                  LIBPATH = ['/usr/lib', '/usr/local/lib', '#libs', commons_path ],
+                  LIBS = ['check', 'common', 'curl', 'm', 'z'],
+                  LINKFLAGS = ['-fopenmp']
+                  )
+
+filters = env.Program('filters_vcf.test', 
+             source = ['test_vcf_filters.c', 
+                       "%s/libcommon.a" % commons_path,
+                       "%s/libbioinfo.a" % bioinfo_path
+                      ]
+           )
+
+regions = env.Program('parse_regions_vcf.test', 
+             source = ['test_parse_regions.c', 
+                       "%s/libcommon.a" % commons_path,
+                       "%s/libbioinfo.a" % bioinfo_path
+                      ]
+           )
+
+stats = env.Program('stats_vcf.test', 
+             source = ['test_stats.c', 
+                       "%s/libcommon.a" % commons_path,
+                       "%s/libbioinfo.a" % bioinfo_path
+                      ]
+           )

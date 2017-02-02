@@ -1,0 +1,25 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug configuration example",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceRoot}/bin/hpg-aligner",
+      "args": [
+        "bs","-i",
+        "<PATH_TO_THE_GENOME_BWT_INDEX_GOES_HERE>",
+        "-f",
+        "<PATH_TO_THE_FASTQ_FILE_GOES_HERE>",
+        "-t","-o", ".", "--cpu-threads", "<THREAD_COUNT>"
+      ],
+      "stopAtEntry": true,
+      "cwd": "${workspaceRoot}",
+      "environment": [],
+      "externalConsole": false,
+      "linux": {
+        "MIMode": "gdb"
+      }
+    }
+  ]
+}

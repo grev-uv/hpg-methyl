@@ -1,0 +1,16 @@
+Import('formats_env')
+
+penv = formats_env.Clone()
+penv['CFLAGS'] += ' -D_XOPEN_SOURCE=600'
+penv['CPPPATH'].append('#lib/bioinfo-libs/bioformats/bam/samtools')
+
+# TODO: Remove fastq_batch_reader_omp so Glob can be used
+formats_env['objects'] += penv.Object(Glob('*.c'))
+#formats_env['objects'] += penv.Object(Split('alignment.c bam_file.c'))
+
+# Compile samtools and add its objects to the library
+samtoolsenv = formats_env.Clone()
+samtoolsenv['CFLAGS'] = ' -g -Wall -O2  -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE -D_USE_KNETFILE -D_CURSES_LIB=1 '
+samtoolsenv['CPPPATH'].append('./samtools')
+formats_env['objects'] += samtoolsenv.Object(Glob('samtools/*.c'))
+

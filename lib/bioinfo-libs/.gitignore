@@ -1,0 +1,15 @@
+
+*.o
+*.a
+*.so
+*.test
+bin/*
+*~
+*anjuta*
+*sonar*
+*kdev*
+.sconsign.dblite
+#bioformats/fastq/test/test.bwa.read*
+2M_reads_se.fastq
+compile*
+test-search-cpu

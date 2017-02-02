@@ -1,0 +1,85 @@
+//-------------------------------------------------------
+// Visual Studio Code environment configuration for the
+// HPG-Methyl project.
+//
+// - Date: 15 / 11 / 2016
+// - Who: Cesar
+{
+    // Building task for Visual Studio code
+    // Includes:
+    // - Release profile.
+    // - Debug profile.
+    // - Clean command.
+    //
+    // - Date: 15 / 11 / 2016
+    // - Who: Cesar
+    "version": "0.1.0",
+    "isShellCommand": true,
+    "command": "sh",
+    "args": [
+        "-c"
+    ],
+    "showOutput": "always",
+    "suppressTaskName": true,
+
+    // Targets for release, debug, clean and package
+    "tasks":[
+        {
+            "taskName": "Build release",
+            "args": [
+                "scons debug=0"
+            ],
+            // Support for error and warning output
+            "problemMatcher": {
+                "owner": "cpp",
+                "fileLocation": ["relative", "${workspaceRoot}"],
+                "pattern": {
+                    "regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
+                    "file": 1,
+                    "line": 2,
+                    "column": 3,
+                    "severity": 4,
+                    "message": 5
+                }
+            }
+        },
+        {
+            "taskName": "Build debug",
+            "isBuildCommand": true,
+            "args": [
+                "scons debug=1"
+            ],
+            // Support for error and warning output
+            "problemMatcher": {
+                "owner": "cpp",
+                "fileLocation": ["relative", "${workspaceRoot}"],
+                "pattern": {
+                    "regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
+                    "file": 1,
+                    "line": 2,
+                    "column": 3,
+                    "severity": 4,
+                    "message": 5
+                }
+            }
+        },
+        {
+            "taskName": "Clean project",
+            "args": [
+                "scons -c"
+            ]
+        },
+        {
+            "taskName": "Clean RTL tables",
+            "args": [
+                "find . -type f -name '*.expand' -delete"
+            ]
+        },
+        {
+            "taskName": "Create release packages",
+            "args":[
+                "scons package=1"
+            ]
+        }
+    ]
+}

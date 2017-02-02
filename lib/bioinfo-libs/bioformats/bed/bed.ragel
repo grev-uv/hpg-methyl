@@ -1,0 +1,311 @@
+#include "bed_reader.h"
+
+static size_t lines = 1;
+static size_t num_records = 0;
+static size_t num_batches = 0;
+
+static bed_record_t *current_record;
+static bed_header_entry_t *current_header_entry;
+static bed_batch_t *current_batch;
+
+%%{
+    machine bed;
+    write data;
+
+    #############################################
+    #             Actions definition            #
+    #############################################
+
+    action linebreak {
+        lines++;
+//        printf("lines read = %d\n", lines);
+    }
+    
+    action header_entry_begin {
+        current_header_entry = bed_header_entry_new();
+        ts = p;
+    }
+
+    action header_entry_end {
+        set_bed_header_entry_text(ts, p-ts, current_header_entry);
+        add_bed_header_entry(current_header_entry, file);
+    }
+
+    action header_entry_error {
+        printf("Line %zu (%s): Error in header\n", lines, file->filename);
+    }
+
+    action record_begin {
+        current_record = bed_record_new();
+    }
+
+    action record_end {
+        // If batch is full, add to the list of batches and create a new, empty one
+        if (batch_size > 0 && current_batch->records->size == batch_size) {
+            list_item_t *item = list_item_new(num_records, 1, current_batch); 
+            list_insert_item(item, batches_list);
+//             printf("Batch %d added - %zu records\t", batches, current_batch->records->size);
+            current_batch = bed_batch_new(batch_size);
+            
+            if (p+1) {
+                current_batch->text = p+1;
+//                 printf("batch text = '%.*s'\n", 50, current_batch->text);
+            }
+            num_batches++;
+            num_records = 0;
+        }
+
+        // If not a blank line, add current record to current batch
+        add_record_to_bed_batch(current_record, current_batch);
+        num_records++;
+    }
+
+    action chrom_begin {
+        ts = p;
+    }
+
+    action chrom_end {
+        set_bed_record_chromosome(ts, p-ts, current_record);
+    }
+
+    action chrom_error {
+        printf("Line %zu (%s): Error in 'chrom' field\n", num_batches * batch_size + num_records, file->filename);
+    }
+
+    action start_begin {
+        ts = p;
+    }
+
+    action start_end {
+        char *field = strndup(ts, p-ts);
+        set_bed_record_start(atol(field), current_record);
+        free(field);
+    }
+
+    action start_error {
+        printf("Line %zu (%s): Error in 'start' field\n", num_batches * batch_size + num_records, file->filename);
+    }
+
+    action end_begin {
+        ts = p;
+    }
+
+    action end_end {
+        char *field = strndup(ts, p-ts);
+        set_bed_record_end(atol(field), current_record);
+        free(field);
+    }
+
+    action end_error {
+        printf("Line %zu (%s): Error in 'end' field\n", num_batches * batch_size + num_records, file->filename);
+    }
+
+    action name_begin {
+        ts = p;
+    }
+
+    action name_end {
+        set_bed_record_name(ts, p-ts, current_record);
+    }
+
+    action name_error {
+        printf("Line %zu (%s): Error in 'name' field\n", num_batches * batch_size + num_records, file->filename);
+    }
+
+    action score_begin {
+        ts = p;
+    }
+
+    action score_end {
+        float score = -1.0f;
+        if (strncmp(".", ts, 1) != 0) {
+            char *field = strndup(ts, p-ts);
+            score = atof(field);
+            free(field);
+        }
+        set_bed_record_score(score, current_record);
+    }
+
+    action score_error {
+        printf("Line %zu (%s): Error in 'score' field\n", num_batches * batch_size + num_records, file->filename);
+    }
+
+    action strand_begin {
+        ts = p;
+    }
+
+    action strand_end {
+        set_bed_record_strand(*ts, current_record);
+    }
+
+    action strand_error {
+        printf("Line %zu (%s): Error in 'strand' field\n", num_batches * batch_size + num_records, file->filename);
+    }
+
+    action thickstart_begin {
+        ts = p;
+    }
+
+    action thickstart_end {
+        char *field = strndup(ts, p-ts);
+        set_bed_record_thickstart(atol(field), current_record);
+        free(field);
+    }
+
+    action thickstart_error {
+        printf("Line %zu (%s): Error in 'thickStart' field\n", num_batches * batch_size + num_records, file->filename);
+    }
+
+    action thickend_begin {
+        ts = p;
+    }
+
+    action thickend_end {
+        char *field = strndup(ts, p-ts);
+        set_bed_record_thickend(atol(field), current_record);
+        free(field);
+    }
+
+    action thickend_error {
+        printf("Line %zu (%s): Error in 'thickEnd' field\n", num_batches * batch_size + num_records, file->filename);
+    }
+    
+    action itemrgb_begin {
+        ts = p;
+    }
+
+    action itemrgb_end {
+        set_bed_record_itemrgb(ts, p-ts, current_record);
+    }
+
+    action itemrgb_error {
+        printf("Line %zu (%s): Error in 'itemRgb' field\n", num_batches * batch_size + num_records, file->filename);
+    }
+
+    action blockcount_begin {
+        ts = p;
+    }
+
+    action blockcount_end {
+        char *field = strndup(ts, p-ts);
+        set_bed_record_blockcount(atoi(field), current_record);
+        free(field);
+    }
+
+    action blockcount_error {
+        printf("Line %zu (%s): Error in 'blockCount' field\n", num_batches * batch_size + num_records, file->filename);
+    }
+
+    action blocksizes_begin {
+        ts = p;
+    }
+
+    action blocksizes_end {
+        set_bed_record_blocksizes(ts, p-ts, current_record);
+    }
+
+    action blocksizes_error {
+        printf("Line %zu (%s): Error in 'blockSizes' field\n", num_batches * batch_size + num_records, file->filename);
+    }
+
+    action blockstarts_begin {
+        ts = p;
+    }
+
+    action blockstarts_end {
+        set_bed_record_blockstarts(ts, p-ts, current_record);
+    }
+
+    action blockstarts_error {
+        printf("Line %zu (%s): Error in 'blockStarts' field\n", num_batches * batch_size + num_records, file->filename);
+    }
+
+
+    #################################################
+    #               Machine definition              #
+    #################################################
+
+    number          = (digit)+ ("." (digit)+)? ;    # Integer or floating-point number
+    bases           = ("A" | "C" | "G" | "T" | "N")+ ;
+    identifier      = (alnum)+ ;
+
+    # Header
+    header_text     = (ascii)+ ;
+    header_entry    = (ascii)+ >header_entry_begin %header_entry_end $err(header_entry_error) ;
+    header          = ( header_entry "\n" >linebreak )* ;
+
+    # Comment
+    comment         = "#" (print)+ ;
+
+    # Records
+    record_chrom        = ("chr" | "scaffold") (alnum | "_")+ ;
+    record_start        = number ;
+    record_end          = number ;
+    record_name         = (alnum | "_")+ | "." ;
+    record_score        = number | "." ;
+    record_strand       = "+" | "-" | "." ;
+    record_thickstart   = number | "." ;
+    record_thickend     = number | "." ;
+    record_itemrgb      = number ("," number)* | "." ;
+    record_blockcount   = number | "." ;
+    record_blocksizes   = number ("," number)* | "." ;
+    record_blockstarts  = number ("," number)* | "." ;
+
+    record	    = (record_chrom >chrom_begin %chrom_end $err(chrom_error) "\t" 
+                       record_start >start_begin %start_end $err(start_error) "\t" 
+                       record_end >end_begin %end_end $err(end_error) "\t"  
+                       (record_name >name_begin %name_end $err(name_error) "\t" )? 
+                       (record_score >score_begin %score_end $err(score_error) "\t" )?
+                       (record_strand >strand_begin %strand_end $err(strand_error) "\t" )?
+                       (record_thickstart >thickstart_begin %thickstart_end $err(thickstart_error) "\t" )?
+                       (record_thickend >thickend_begin %thickend_end $err(thickend_error) "\t" )?
+                       (record_itemrgb >itemrgb_begin %itemrgb_end $err(itemrgb_error) "\t" )?
+                       (record_blockcount >blockcount_begin %blockcount_end $err(blockcount_error) "\t" )?
+                       (record_blocksizes >blocksizes_begin %blocksizes_end $err(blocksizes_error) "\t" )?
+                       (record_blockstarts >blockstarts_begin %blockstarts_end $err(blockstarts_error) )? )
+                       >record_begin %record_end ;
+    records         = record ("\n" >linebreak (record | comment))* ;
+
+    # Machine start
+    main           := (header)? ("\n")* (records)? ("\n")* ;
+
+
+}%%
+
+
+int bed_ragel_read(list_t *batches_list, size_t batch_size, bed_file_t *file) {
+    int cs;
+    char *p = file->data;
+    char *pe = p + file->data_len;
+    char *eof = pe;
+    char *ts, *te;
+    int stack[4];
+    int top, act;
+
+    current_header_entry = bed_header_entry_new();
+    current_batch = bed_batch_new(batch_size);
+
+    %%{
+        write init;
+        write exec;
+    }%% 
+
+    // Insert the last batch
+    if (!bed_batch_is_empty(current_batch)) {
+        list_item_t *item = list_item_new(num_records, 1, current_batch); 
+        list_insert_item(item, batches_list);
+        LOG_DEBUG_F("Batch added - %zu records (last)\n", current_batch->records->size);
+    }
+
+    if ( cs < %%{ write first_final; }%% ) {
+        LOG_INFO_F("Last state is %d, but %d was expected\n", 
+                cs, %%{ write first_final; }%%);
+    } 
+
+    LOG_INFO_F("BED records read = %zu\n", num_batches * batch_size + num_records);
+
+    // Free current_xxx pointers if not needed in another module
+    //bed_header_entry_free(current_header_entry);
+
+    return cs < %%{ write first_final; }%%;
+}
