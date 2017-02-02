@@ -1,0 +1,9 @@
+# gitignore for HPG-Methyl
+
+# Ignore bin directory
+*/bin
+
+# Ignore the SCons cache
+*.sconsign.dblite
+
+

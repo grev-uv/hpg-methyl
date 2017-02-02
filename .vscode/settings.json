@@ -14,4 +14,10 @@
         "../nuevo/": true,
         "../antiguo/": true
     }
+,
+"files.associations": {
+  "SConstruct": "python",
+  "*.cu": "c",
+  "*.cuh": "c"
+}
 }
