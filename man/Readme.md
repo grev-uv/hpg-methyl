@@ -4,7 +4,29 @@ HPG-Methyl Manual
 
 A PDF version of the user manual can be downloaded from [here](manual.pdf).
 
+# Running
 
+Run HPG-Methyl with:
+
+```hpg-methyl <mode> <options>```
+
+Where mode can be either `build-index`, which must be called before doing any
+mappings to create the BWT index, and `bs`, used to map sequences to the genome
+and extract the methylation status.
+
+## BS mode
+
+The `bs` mode is used to map sequenced reads with the reference genome and,
+optionally, extract the methylation context information from the alignments.
+The mandatory command line options for the mode are:
+
+* `-i` / `--bwt-index`: Path to the directory containing the BWT index created
+  previously with the `build-index` option.
+* `-f` / `--fq` / `--fastq`: Path to the FASTQ sequence file containing the
+  sequenced reads.
+* `--cpu-threads`: The number of CPU threads to use. HPG-Methyl can fully exploit
+  all the processing cores available in your computer platform, improving the
+  performance.
 
 ## Burrows-Wheeler Index generation
 
