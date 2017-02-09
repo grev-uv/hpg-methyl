@@ -401,13 +401,14 @@ void file_write_items(fastq_read_t *fq_read, array_list_t *items,
 
 //------------------------------------------------------------------------------------
 
-bs_context_t *bs_context_new(size_t num_reads) {
+bs_context_t *bs_context_new(size_t num_reads, size_t num_chromosomes) {
   bs_context_t *p = (bs_context_t*) calloc(1, sizeof(bs_context_t));
 
   p->context_CpG = array_list_new(num_reads, 1.25f, COLLECTION_MODE_ASYNCHRONIZED);
   p->context_CHG = array_list_new(num_reads, 1.25f, COLLECTION_MODE_ASYNCHRONIZED);
   p->context_CHH = array_list_new(num_reads, 1.25f, COLLECTION_MODE_ASYNCHRONIZED);
   p->context_MUT = array_list_new(num_reads, 1.25f, COLLECTION_MODE_ASYNCHRONIZED);
+  p->methyl_reads = calloc(num_chromosomes, sizeof(uint32_t));
 
   return p;
 }
@@ -416,6 +417,7 @@ bs_context_t *bs_context_new(size_t num_reads) {
 
 void bs_context_free(bs_context_t *p) {
   if (p) {
+    free(p->methyl_reads);
     free(p);
   }
 }

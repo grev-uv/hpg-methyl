@@ -24,6 +24,9 @@
 #include "hash_table.h"
 #include "array_list_bs.h"
 
+#include "bioformats/bam/bam_tags.h"
+#include "bwt_server.h"
+
 //====================================================================================
 
 // values for the diferent combination of nucleotides
@@ -31,62 +34,6 @@
 #define AGT  1
 #define ACT  2
 #define AT   3
-
-// limites to use with the histogram data of the reads
-#define LIMIT_INF   0.20
-#define LIMIT_SUP   0.30
-
-
-// macros for postproces
-#define search_gen()							\
-  ({res = tmp & (unsigned long long)3;					\
-    switch(res){							\
-    case 0:								\
-      break;								\
-    case 1:								\
-      if (read[pos] == c1){						\
-	postprocess_bs(query_name, '+', c, init + pos, 'Z', strand, 0, bs_context->context_CpG); \
-	bs_context->CpG_methyl++;					\
-      } else {								\
-	if (read[pos] == c2) {					\
-	  postprocess_bs(query_name, '-', c, init + pos, 'z', strand, 0, bs_context->context_CpG); \
-	  bs_context->CpG_unmethyl++;					\
-	} else {							\
-	  postprocess_bs(query_name, '.', c, init + pos, 'M', strand, 3, bs_context->context_MUT); \
-	  bs_context->MUT_methyl++;					\
-	}								\
-      }									\
-      break;								\
-    case 2:								\
-      if (read[pos] == c1) {					\
-	postprocess_bs(query_name, '+', c, init + pos, 'X', strand, 0, bs_context->context_CHG); \
-	bs_context->CHG_methyl++;					\
-      } else {								\
-	if (read[pos] == c2) {					\
-	  postprocess_bs(query_name, '-', c, init + pos, 'x', strand, 0, bs_context->context_CHG); \
-	  bs_context->CHG_unmethyl++;					\
-	} else {							\
-	  postprocess_bs(query_name, '.', c, init + pos, 'M', strand, 3, bs_context->context_MUT); \
-	  bs_context->MUT_methyl++;					\
-	}								\
-      }									\
-      break;								\
-    case 3:								\
-      if (read[pos] == c1) {						\
-	postprocess_bs(query_name, '+', c, init + pos, 'H', strand, 2, bs_context->context_CHH); \
-	bs_context->CHH_methyl++;					\
-      } else {								\
-	if (read[pos] == c2) {					\
-	  postprocess_bs(query_name, '-', c, init + pos, 'h', strand, 2, bs_context->context_CHH); \
-	  bs_context->CHH_unmethyl++;					\
-	} else {							\
-	  postprocess_bs(query_name, '.', c, init + pos, 'M', strand, 3, bs_context->context_MUT); \
-	  bs_context->MUT_methyl++;					\
-	}								\
-      }									\
-      break;								\
-    }									\
-    tmp = tmp >> 2;})
 
 
 //====================================================================================
@@ -117,6 +64,8 @@ typedef struct metil_file {
   size_t CHH_unmethyl;               /**< Global Counter for unmethylated Cytosines in CHH context */
   size_t MUT_methyl;                 /**< Global Counter for mutated Cytosines                     */
   size_t num_bases;                  /**< Global Counter for number of bases in the batch          */
+
+  uint32_t *methyl_reads;            /**< Array with the number of methylated reads per chromosome */
 } metil_file_t;
 
 //====================================================================================
@@ -235,18 +184,6 @@ void revert_mappings_seqs(array_list_t **src1, array_list_t **src2, array_list_t
 //====================================================================================
 
 /**
- * @brief  Make an histogram of the read
- * @param  seq  
- * @param  len  
- * @param  type 
- * 
- * Return true if the number of certain base is greater than the filter
- */
-int histogram_seq(char *seq, size_t len, int type);
-
-//====================================================================================
-
-/**
  * @brief  Stage to determine the status of each Cytosine in the sequence alignment                                       
  * @param  batch                                                                                                           
  *                                                                                                                         
@@ -265,30 +202,6 @@ int methylation_status_report(sw_server_input_t* input, batch_t *batch);
  */
 //void add_metilation_status(array_list_t *array_list, array_list_t *list, bs_context_t *bs_context, genome_t * genome, array_list_t * orig_seq, size_t index, int conversion);
 void add_metilation_status(array_list_t *array_list, bs_context_t *bs_context, genome_t * genome, array_list_t * orig_seq, size_t index, int conversion);
-
-//====================================================================================                                     
-
-/**
- * @brief  Add the metilation status of each Cytosine to the write list
- * @param  array_list
- * @param  bs_status
- *
- *
- */
-void add_metilation_status_bin(array_list_t *array_list, bs_context_t *bs_context,
-			       unsigned long long **gen_binCT, unsigned long long **gen_binGA,
-			       array_list_t * orig_seq, size_t index, int conversion);
-
-//====================================================================================                                     
-
-/**
- * @brief  
- * @param  
- * @param  
- *
- *
- */
-void search_methylation(int c, size_t init, size_t end, unsigned long long **values, char *read, bs_context_t *bs_context, char strand, int type, char *query_name);
 
 //====================================================================================                                     
 
@@ -312,7 +225,7 @@ void postprocess_bs(char *query_name, char status, size_t chromosome, size_t sta
  * 
  * 
  */
-void write_bs_context(metil_file_t *metil_file, bs_context_t *bs_context);
+void write_bs_context(metil_file_t *metil_file, bs_context_t *bs_context, size_t num_chromosomes);
 
 //====================================================================================
 

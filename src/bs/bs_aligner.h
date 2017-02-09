@@ -39,4 +39,6 @@ void run_bs_aligner(genome_t *genome2, genome_t *genome1, genome_t *genome,
 		    pair_mng_t *pair_mng, report_optarg_t *report_optarg,
 		    options_t *options);
 
+void generate_chr_methylation_stats(metil_file_t *metil_file, size_t num_chromosomes, const options_t *options, bam_file_t *bam_file);
+
 #endif

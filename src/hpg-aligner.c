@@ -93,8 +93,7 @@ int main(int argc, char* argv[]) {
   argc -= 1;
   argv += 1;
 
-  if (strcmp(command, "bs") != 0 &&
-      strcmp(command, "build-index") != 0) {
+  if (strcmp(command, "bs") != 0) {
     LOG_FATAL("Command unknown.\nValid commands are:\n \
     \tbs: to map BS sequences\n \
     \tbuild-index: to create the genome index.\n \
@@ -292,7 +291,7 @@ int main(int argc, char* argv[]) {
     timing_free(timing);
   }
 
-  basic_statistics_display(basic_st, !strcmp(command, "rna"), time_alig / 1000000, time_genome / 1000000);
+  basic_statistics_display(basic_st, 0, time_alig / 1000000, time_genome / 1000000);
   free(basic_st);
   options_free(options);
 

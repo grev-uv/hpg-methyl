@@ -45,6 +45,7 @@ int bs_writer(void *data) {
 
   array_list_t *bs_stat = mapping_batch->bs_status;
   char *bs_seq;
+  size_t num_chromosomes = batch->bwt_input->genome->num_chromosomes;
 
   // Process mapping_lists and mapping_lists2
   for (int k = 0; k < 2; k++) {
@@ -80,7 +81,7 @@ int bs_writer(void *data) {
 
   // To use with the postprocess,  write metil context files
   if (batch->write_mcontext) {
-	  write_bs_context(metil_file, bs_context);
+	  write_bs_context(metil_file, bs_context, num_chromosomes);
   }
   
   if (basic_st->total_reads >= writer_input->limit_print) {

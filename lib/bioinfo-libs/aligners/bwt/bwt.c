@@ -891,7 +891,7 @@ size_t bwt_map_exact_seq(char *seq,
   //replaceBases(seq, code_seq, len);
   bwt_encode_Bases(code_seq, seq, len, &index->table);
   struct timeval t_start, t_end;
-  char *optional_fields /*= (char *)malloc(sizeof(char)*256)*/;
+  char *optional_fields = NULL;
   //printf("---> EXACT Search Read (%d): %s\n", len, seq);
 
   
@@ -1897,39 +1897,27 @@ size_t __bwt_map_inexact_read(fastq_read_t *read,
 //-----------------------------------------------------------------------------
 
 alignment_t* add_optional_fields(alignment_t *alignment, size_t n_mappings) {
-  char *p, *optional_fields;
-  size_t optional_fields_length = 100;
-  int distance;
-  int AS = 254;
-  int cigar_len;
-  
-  optional_fields = (char *)calloc(optional_fields_length, sizeof(char));
-  p = optional_fields;
-  
-  sprintf(p, "ASi");
-  p += 3;
-  memcpy(p, &AS, sizeof(int));
-  p += sizeof(int);
-  
-  sprintf(p, "NHi");
-  p += 3;
-  memcpy(p, &n_mappings, sizeof(int));
-  p += sizeof(int);
-  
-  sprintf(p, "NMi");
-  p += 3;
-  cigar_len = strlen(alignment->cigar);
-  
-  if (alignment->cigar[cigar_len - 1] == '=') {
+  bam_int_t distance;
+  bam_int_t AS = 254;
+  bam_int_t NH = n_mappings;
+
+  bam_tag_t* as_tag = bam_tag_init(AS_TAG_NAME, BAM_TAG_TYPE_INT, 0, 0);
+  bam_tag_t* nh_tag = bam_tag_init(NH_TAG_NAME, BAM_TAG_TYPE_INT, 0, 0);
+  bam_tag_t* nm_tag = bam_tag_init(NM_TAG_NAME, BAM_TAG_TYPE_INT, 0, 0);
+
+  if (alignment->cigar[strlen(alignment->cigar) - 1] == '=') {
     distance = 0;
   } else {
     distance = 1;
   }
-  
-  memcpy(p, &distance, sizeof(int));
-  p += sizeof(int);
-  alignment->optional_fields_length = p - optional_fields;
-  alignment->optional_fields = optional_fields;
+
+  bam_tag_set_scalar(as_tag, &AS);
+  bam_tag_set_scalar(nh_tag, &NH);
+  bam_tag_set_scalar(nm_tag, &distance);
+
+  array_list_insert(as_tag, alignment->optional_tags);
+  array_list_insert(nh_tag, alignment->optional_tags);
+  array_list_insert(nm_tag, alignment->optional_tags);
   
   return alignment;
 }

@@ -158,15 +158,10 @@ void revert_mappings_seqs(array_list_t **src1, array_list_t **src2, array_list_t
 char *obtain_seq(alignment_t *alig, fastq_read_t * orig) {
   char *read = orig->sequence;
   char *cigar = strdup(alig->cigar);
-  int num;
-  char car;
-  int cont, pos, pos_read;
-  int operations;
-  int len = strlen(cigar) - 1;
   char *seq = (char *)calloc(1024, sizeof(char));
-  
-  pos = 0;
-  pos_read = 0;
+
+  int cont, pos = 0, pos_read = 0, num, operations;
+  char car;
   
   for (operations = 0; operations < alig->num_cigar_operations; operations++) {
     sscanf(cigar, "%i%c%s", &num, &car, cigar);
@@ -198,17 +193,20 @@ char *obtain_seq(alignment_t *alig, fastq_read_t * orig) {
 
 void metil_file_init(metil_file_t *metil_file, char *dir, genome_t *genome) {
   char *name_tmp = malloc(128 * sizeof(char));
-
   int file_error;
 
   sprintf(name_tmp, "%s/CpG_context.txt", dir);
   metil_file->filenameCpG = strdup(name_tmp);
+  
   sprintf(name_tmp, "%s/CHG_context.txt", dir);
   metil_file->filenameCHG = strdup(name_tmp);
+
   sprintf(name_tmp, "%s/CHH_context.txt", dir);
   metil_file->filenameCHH = strdup(name_tmp);
+
   sprintf(name_tmp, "%s/MUT_context.txt", dir);
   metil_file->filenameMUT = strdup(name_tmp);
+
   sprintf(name_tmp, "%s/Statistics.txt", dir);
   metil_file->filenameSTAT = strdup(name_tmp);
 
@@ -273,6 +271,8 @@ void metil_file_init(metil_file_t *metil_file, char *dir, genome_t *genome) {
   metil_file->CHH_unmethyl = 0;
   metil_file->MUT_methyl   = 0;
   metil_file->num_bases    = 0;
+
+  metil_file->methyl_reads = calloc(genome->num_chromosomes, sizeof(uint32_t));
 }
 
 //------------------------------------------------------------------------------------
@@ -283,6 +283,7 @@ void metil_file_free(metil_file_t *metil_file) {
   free(metil_file->filenameCHH);
   free(metil_file->filenameMUT);
   free(metil_file->filenameSTAT);
+  free(metil_file->methyl_reads);
 
   if (metil_file->CpG  != NULL) fclose(metil_file->CpG);
   if (metil_file->CHG  != NULL) fclose(metil_file->CHG);
@@ -347,7 +348,7 @@ int methylation_status_report(sw_server_input_t* input, batch_t *batch) {
   }
 
   // Inicializar listas para guardar datos de c's metiladas/no metiladas
-  bs_context_t *bs_context = bs_context_new(10000);
+  bs_context_t *bs_context = bs_context_new(10000, genome->num_chromosomes);
   mapping_batch->bs_context = bs_context;
 
   remove_duplicates(num_reads, mapping_batch->mapping_lists, mapping_batch->mapping_lists2);
@@ -379,6 +380,9 @@ void add_metilation_status(array_list_t *array_list, bs_context_t *bs_context, g
   size_t num_items = array_list_size(array_list);
   size_t len, end, start;
 
+  // Number of methylated entries, used for the ZM tag
+  size_t num_methyl = 0;
+
   alignment_t *alig;
   fastq_read_t *orig;
   metil_data_t *metil_data;
@@ -403,7 +407,7 @@ void add_metilation_status(array_list_t *array_list, bs_context_t *bs_context, g
         free(seq_dup);
       }
 
-      // Increase de counter number of bases
+      // Increase the counter number of bases
       len = orig->length;
       gen = (char *)calloc(len + 5, sizeof(char));
 
@@ -416,6 +420,21 @@ void add_metilation_status(array_list_t *array_list, bs_context_t *bs_context, g
 
       genome_read_sequence_by_chr_index(gen, alig->seq_strand, alig->chromosome, &start, &end, genome);
 
+      // Initialize the auxiliary tag data for the alignment
+      bam_tag_t *tag_zm = bam_tag_init(ZM_TAG_NAME, BAM_TAG_TYPE_INT, 0, 0);
+      bam_tag_t *tag_xm = bam_tag_init(XM_TAG_NAME, BAM_TAG_TYPE_STRING, 0, len);
+      bam_tag_t *tag_xg = bam_tag_init(XG_TAG_NAME, BAM_TAG_TYPE_STRING, 0, 2);
+      bam_tag_t *tag_xr = bam_tag_init(XR_TAG_NAME, BAM_TAG_TYPE_STRING, 0, 2);
+
+      // Set the alignment conversion data
+      if (conversion) {
+        bam_tag_str_insert(tag_xg, XG_CONVERSION_CT, 2);
+        bam_tag_str_insert(tag_xr, XR_CONVERSION_CT, 2);
+      } else {
+        bam_tag_str_insert(tag_xg, XG_CONVERSION_GA, 2);
+        bam_tag_str_insert(tag_xr, XR_CONVERSION_GA, 2);
+      }
+
       for (size_t i = 0; i < len; i++) {
         if ((conversion == 1 && alig->seq_strand == 0) || (conversion == 0 && alig->seq_strand == 1)) {
           // Methylated/unmethylated cytosines are located in the same strand as the alignment
@@ -423,19 +442,30 @@ void add_metilation_status(array_list_t *array_list, bs_context_t *bs_context, g
             if (gen[i + 1] == 'G') {
               if (seq[i] == 'C') {
                 if (write_file == 1) {
-                  postprocess_bs(alig->query_name, '+', alig->chromosome, start + i, 'Z', alig->seq_strand, 0, bs_context->context_CpG);
+                  postprocess_bs(alig->query_name, '+', alig->chromosome, start + i, XM_METHYLATED_CPG, alig->seq_strand, 0, bs_context->context_CpG);
+
+                  // Update the alignment methylation tag
+                  bam_tag_str_append(tag_xm, XM_METHYLATED_CPG);
+                  ++num_methyl;
                 }
 
                 bs_context->CpG_methyl++;
               } else if (seq[i] == 'T') {
                 if (write_file == 1) {
-                  postprocess_bs(alig->query_name, '-', alig->chromosome, start + i, 'z', alig->seq_strand, 0,bs_context->context_CpG);
+                  postprocess_bs(alig->query_name, '-', alig->chromosome, start + i, XM_UNMETHYLATED_CPG, alig->seq_strand, 0,bs_context->context_CpG);
+
+                  // Update the alignment methylation tag
+                  bam_tag_str_append(tag_xm, XM_UNMETHYLATED_CPG);
                 }
 
                 bs_context->CpG_unmethyl++;
               } else {
                 if (write_file == 1) {
-                  postprocess_bs(alig->query_name, '.', alig->chromosome, start + i, 'M', alig->seq_strand, 3,bs_context->context_MUT);
+                  postprocess_bs(alig->query_name, '.', alig->chromosome, start + i, XM_METHYLATED_MUT, alig->seq_strand, 3,bs_context->context_MUT);
+
+                  // Update the alignment methylation tag
+                  bam_tag_str_append(tag_xm, XM_METHYLATED_MUT);
+                  ++num_methyl;
                 }
                 
                 bs_context->MUT_methyl++;
@@ -444,19 +474,30 @@ void add_metilation_status(array_list_t *array_list, bs_context_t *bs_context, g
               if (gen[i + 2] == 'G') {
                 if (seq[i] == 'C') {
                   if (write_file == 1) {
-                    postprocess_bs(alig->query_name, '+', alig->chromosome, start + i, 'X', alig->seq_strand, 1,bs_context->context_CHG);
+                    postprocess_bs(alig->query_name, '+', alig->chromosome, start + i, XM_METHYLATED_CHG, alig->seq_strand, 1,bs_context->context_CHG);
+
+                    // Update the alignment methylation tag
+                    bam_tag_str_append(tag_xm, XM_METHYLATED_CHG);
+                    ++num_methyl;
                   }
 
                   bs_context->CHG_methyl++;
                 } else if (seq[i] == 'T') {
                   if (write_file == 1) {
-                    postprocess_bs(alig->query_name, '-', alig->chromosome, start + i, 'x', alig->seq_strand, 1,bs_context->context_CHG);
+                    postprocess_bs(alig->query_name, '-', alig->chromosome, start + i, XM_UNMETHYLATED_CHG, alig->seq_strand, 1,bs_context->context_CHG);
+
+                    // Update the alignment methylation tag
+                    bam_tag_str_append(tag_xm, XM_UNMETHYLATED_CHG);
                   }
 
                   bs_context->CHG_unmethyl++;
                 } else {
                   if (write_file == 1) {
-                    postprocess_bs(alig->query_name, '.', alig->chromosome, start + i, 'M', alig->seq_strand, 3,bs_context->context_MUT);
+                    postprocess_bs(alig->query_name, '.', alig->chromosome, start + i, XM_METHYLATED_MUT, alig->seq_strand, 3,bs_context->context_MUT);
+
+                    // Update the alignment methylation tag
+                    bam_tag_str_append(tag_xm, XM_METHYLATED_MUT);
+                    ++num_methyl;
                   }
 
                   bs_context->MUT_methyl++;
@@ -464,25 +505,40 @@ void add_metilation_status(array_list_t *array_list, bs_context_t *bs_context, g
               } else {
                 if (seq[i] == 'C') {
                   if (write_file == 1) {
-                    postprocess_bs(alig->query_name, '+', alig->chromosome, start + i, 'H', alig->seq_strand, 2,bs_context->context_CHH);
+                    postprocess_bs(alig->query_name, '+', alig->chromosome, start + i, XM_METHYLATED_CHH, alig->seq_strand, 2,bs_context->context_CHH);
+
+                    // Update the alignment methylation tag
+                    bam_tag_str_append(tag_xm, XM_METHYLATED_CHH);
+                    ++num_methyl;
                   }
 
                   bs_context->CHH_methyl++;
                 } else if (seq[i] == 'T') {
                   if (write_file == 1) {
-                    postprocess_bs(alig->query_name, '-', alig->chromosome, start + i, 'h', alig->seq_strand, 2,bs_context->context_CHH);
+                    postprocess_bs(alig->query_name, '-', alig->chromosome, start + i, XM_UNMETHYLATED_CHH, alig->seq_strand, 2,bs_context->context_CHH);
+
+                    // Update the alignment methylation tag
+                    bam_tag_str_append(tag_xm, XM_UNMETHYLATED_CHH);
                   }
 
                   bs_context->CHH_unmethyl++;
                 } else {
                   if (write_file == 1) {
-                    postprocess_bs(alig->query_name, '.', alig->chromosome, start + i, 'M', alig->seq_strand, 3,bs_context->context_MUT);
+                    postprocess_bs(alig->query_name, '.', alig->chromosome, start + i, XM_METHYLATED_MUT, alig->seq_strand, 3,bs_context->context_MUT);
+
+                    // Update the alignment methylation tag
+                    bam_tag_str_append(tag_xm, XM_METHYLATED_MUT);
+                    ++num_methyl;
                   }
                       
                   bs_context->MUT_methyl++;
                 }
               }
             }
+          } else {
+            // Skip one methylation entry if the current
+            // nucleotide is not a cytosine
+            bam_tag_str_append(tag_xm, XM_NON_RELEVANT);
           }
         } else {
           // Methylated/unmethylated cytosines are located in the other strand
@@ -496,19 +552,30 @@ void add_metilation_status(array_list_t *array_list, bs_context_t *bs_context, g
             if (gen[i + 1] == 'C') {
               if (seq[i] == 'G') {
                 if (write_file == 1) {
-                  postprocess_bs(alig->query_name, '+', alig->chromosome, start + i, 'Z', new_strand, 0,bs_context->context_CpG);
+                  postprocess_bs(alig->query_name, '+', alig->chromosome, start + i, XM_METHYLATED_CPG, new_strand, 0,bs_context->context_CpG);
+
+                  // Update the alignment methylation tag
+                  bam_tag_str_append(tag_xm, XM_METHYLATED_CPG);
+                  ++num_methyl;
                 }
 
                 bs_context->CpG_methyl++;
               } else if (seq[i] == 'A') {
                 if (write_file == 1) {
-                  postprocess_bs(alig->query_name, '-', alig->chromosome, start + i, 'z', new_strand, 0,bs_context->context_CpG);
+                  postprocess_bs(alig->query_name, '-', alig->chromosome, start + i, XM_UNMETHYLATED_CPG, new_strand, 0,bs_context->context_CpG);
+
+                  // Update the alignment methylation tag
+                  bam_tag_str_append(tag_xm, XM_UNMETHYLATED_CPG);
                 }
 
                 bs_context->CpG_unmethyl++;
               } else {
                 if (write_file == 1) {
-                  postprocess_bs(alig->query_name, '.', alig->chromosome, start + i, 'M', alig->seq_strand, 3,bs_context->context_MUT);
+                  postprocess_bs(alig->query_name, '.', alig->chromosome, start + i, XM_METHYLATED_MUT, alig->seq_strand, 3,bs_context->context_MUT);
+
+                  // Update the alignment methylation tag
+                  bam_tag_str_append(tag_xm, XM_METHYLATED_MUT);
+                  ++num_methyl;
                 }
                 
                 bs_context->MUT_methyl++;
@@ -517,19 +584,30 @@ void add_metilation_status(array_list_t *array_list, bs_context_t *bs_context, g
               if (gen[i] == 'C') {
                 if (seq[i] == 'G') {
                   if (write_file == 1) {
-                    postprocess_bs(alig->query_name, '+', alig->chromosome, start + i, 'X', new_strand, 1,bs_context->context_CHG);
+                    postprocess_bs(alig->query_name, '+', alig->chromosome, start + i, XM_METHYLATED_CHG, new_strand, 1,bs_context->context_CHG);
+
+                    // Update the alignment methylation tag
+                    bam_tag_str_append(tag_xm, XM_METHYLATED_CHG);
+                    ++num_methyl;
                   }
                       
                   bs_context->CHG_methyl++;
                 } else if (seq[i] == 'A') {
                   if (write_file == 1) {
-                    postprocess_bs(alig->query_name, '-', alig->chromosome, start + i, 'x', new_strand, 1,bs_context->context_CHG);
+                    postprocess_bs(alig->query_name, '-', alig->chromosome, start + i, XM_UNMETHYLATED_CHG, new_strand, 1,bs_context->context_CHG);
+
+                    // Update the alignment methylation tag
+                    bam_tag_str_append(tag_xm, XM_UNMETHYLATED_CHG);
                   }
 
                   bs_context->CHG_unmethyl++;
                 } else {
                   if (write_file == 1) {
-                    postprocess_bs(alig->query_name, '.', alig->chromosome, start + i, 'M', alig->seq_strand, 3,bs_context->context_MUT);
+                    postprocess_bs(alig->query_name, '.', alig->chromosome, start + i, XM_METHYLATED_MUT, alig->seq_strand, 3,bs_context->context_MUT);
+
+                    // Update the alignment methylation tag
+                    bam_tag_str_append(tag_xm, XM_METHYLATED_MUT);
+                    ++num_methyl;
                   }
 
                   bs_context->MUT_methyl++;
@@ -537,25 +615,40 @@ void add_metilation_status(array_list_t *array_list, bs_context_t *bs_context, g
               } else {
                 if (seq[i] == 'G') {
                   if (write_file == 1) {
-                    postprocess_bs(alig->query_name, '+', alig->chromosome, start + i, 'H', new_strand, 2,bs_context->context_CHH);
+                    postprocess_bs(alig->query_name, '+', alig->chromosome, start + i, XM_METHYLATED_CHH, new_strand, 2,bs_context->context_CHH);
+
+                    // Update the alignment methylation tag
+                    bam_tag_str_append(tag_xm, XM_METHYLATED_CHH);
+                    ++num_methyl;
                   }
 
                   bs_context->CHH_methyl++;
                 } else if (seq[i] == 'A') {
                   if (write_file == 1) {
-                    postprocess_bs(alig->query_name, '-', alig->chromosome, start + i, 'h', new_strand, 2,bs_context->context_CHH);
+                    postprocess_bs(alig->query_name, '-', alig->chromosome, start + i, XM_UNMETHYLATED_CHH, new_strand, 2,bs_context->context_CHH);
+
+                    // Update the alignment methylation tag
+                    bam_tag_str_append(tag_xm, XM_UNMETHYLATED_CHH);
                   }
 
                   bs_context->CHH_unmethyl++;
                 } else {
                   if (write_file == 1) {
-                    postprocess_bs(alig->query_name, '.', alig->chromosome, start + i, 'M', alig->seq_strand, 3,bs_context->context_MUT);
+                    postprocess_bs(alig->query_name, '.', alig->chromosome, start + i, XM_METHYLATED_MUT, alig->seq_strand, 3,bs_context->context_MUT);
+
+                    // Update the alignment methylation tag
+                    bam_tag_str_append(tag_xm, XM_METHYLATED_MUT);
+                    ++num_methyl;
                   }
 
                   bs_context->MUT_methyl++;
                 }
               }
             }
+          } else {
+            // Skip one methylation entry if the current
+            // nucleotide is not a cytosine
+            bam_tag_str_append(tag_xm, XM_NON_RELEVANT);
           }
         }
       }
@@ -567,62 +660,28 @@ void add_metilation_status(array_list_t *array_list, bs_context_t *bs_context, g
       if (gen) {
         free(gen);
       }
+
+      // Set the number of methylated C's to the ZM tag
+      bam_tag_set_scalar(tag_zm, &num_methyl);
+
+      if (num_methyl != 0) {
+        bs_context->methyl_reads[alig->chromosome]++;
+      }
+      
+      num_methyl = 0;
+
+      // Add the methylation context tags to the current alignment
+      array_list_insert(tag_zm, alig->optional_tags); 
+      array_list_insert(tag_xg, alig->optional_tags);
+      array_list_insert(tag_xr, alig->optional_tags);
+      array_list_insert(tag_xm, alig->optional_tags);
     }
   }
 }
 
 //------------------------------------------------------------------------------------
 
-void add_metilation_status_bin(array_list_t *array_list, bs_context_t *bs_context,
-			       unsigned long long **gen_binCT, unsigned long long **gen_binGA,
-			       array_list_t * orig_seq, size_t index, int conversion) {
-  size_t num_items = array_list_size(array_list);
-  size_t len, end, start;
-
-  alignment_t *alig;
-  fastq_read_t *orig;
-  metil_data_t *metil_data;
-
-  char *seq, *gen;
-  char posit = '+', negat = '-';
-  char *new_stage;
-
-  int new_strand;
-  int write_file = 1;
-
-  orig = (fastq_read_t *) array_list_get(index, orig_seq);
-
-  for (size_t j = 0; j < num_items; j++) {
-    alig = (alignment_t *) array_list_get(j, array_list);
-
-    if (alig != NULL && alig->is_seq_mapped) {
-      seq = obtain_seq(alig, orig);
-
-      if (alig->seq_strand == 1) {
-        char *seq_dup = strdup(seq);
-        rev_comp(seq_dup, seq, orig->length);
-        free(seq_dup);
-      }
-
-      len = orig->length;
-      start = alig->position;
-      end = start + len;
-
-      if ((conversion == 1 && alig->seq_strand == 0) || (conversion == 0 && alig->seq_strand == 1)) {
-        search_methylation(alig->chromosome, start, end, gen_binCT, seq, bs_context, '+', 0, alig->query_name);
-      } else {
-        search_methylation(alig->chromosome, start, end, gen_binCT, seq, bs_context, '-', 1, alig->query_name);
-      }
-
-      if (seq) free(seq);
-      if (gen) free(gen);
-    }
-  }
-}
-
-//------------------------------------------------------------------------------------
-
-void write_bs_context(metil_file_t *metil_file, bs_context_t *bs_context) {
+void write_bs_context(metil_file_t *metil_file, bs_context_t *bs_context, size_t num_chromosomes) {
   array_list_t *context_CpG = bs_context->context_CpG;
   array_list_t *context_CHG = bs_context->context_CHG;
   array_list_t *context_CHH = bs_context->context_CHH;
@@ -646,6 +705,11 @@ void write_bs_context(metil_file_t *metil_file, bs_context_t *bs_context) {
   metil_file->CHH_unmethyl += bs_context->CHH_unmethyl;
   metil_file->MUT_methyl   += bs_context->MUT_methyl;
   metil_file->num_bases    += bs_context->num_bases;
+
+  // Accumulate per-read methylation statistics
+  for (size_t i = 0; i < num_chromosomes; ++i) {
+    metil_file->methyl_reads[i] += bs_context->methyl_reads[i];
+  }
 
   if (CpG == NULL) {
     printf("reopen CpG file\n");
@@ -775,96 +839,10 @@ void postprocess_bs(char *query_name, char status, size_t chromosome, size_t sta
 		    array_list_t *list) {
 
   metil_data_t *metil_data = (metil_data_t *) malloc(sizeof(metil_data_t));
+  memset(metil_data, 0, sizeof(metil_data_t));
 
   metil_data_init(metil_data, query_name, status, chromosome, start, context, strand, region);
   array_list_insert(metil_data, list);
-}
-
-//------------------------------------------------------------------------------------
-
-void search_methylation(int c, size_t init, size_t end, unsigned long long **values, char *read, bs_context_t *bs_context, char strand, int type, char *query_name){
-  size_t init_num, end_num;
-  int i, init_num_pos, end_num_pos;
-  unsigned long long tmp, res;
-  size_t j, pos;
-  size_t algo = 0;
-
-  int write_file = 1;
-  int elem = (sizeof(unsigned long long) << 2);
-
-  init_num = init / elem;
-  init_num_pos = init % elem;
-  end_num = end / elem;
-  end_num_pos = end % elem;
-  char c1, c2;
-
-  if (type == 0) {
-    c1 = 'C'; c2 = 'T';
-  } else {
-    c1 = 'G'; c2 = 'A';
-  }
-
-  // Recorrer los valores de derecha a izquierda
-  tmp  = values[c][end_num];
-
-  // Descartar los pares de bits menos significativos hasta llegar al valor donde termina la cadena
-  for (i = elem; i > end_num_pos; i--) {
-    tmp = tmp >> 2;
-  }
-
-
-  // Recorrer los pares de bits comprobando el contexto del ultimo numero
-  for (i = end_num_pos, pos = 0; i >= 0; i--, pos++) {
-    search_gen();
-  }
-
-  // Recorrer los numeros entre el primer y ultimo valor de la cadena
-  for (j = end_num - 1; j > init_num; j--) {
-    tmp  = values[c][j];
-    
-    // Recorrer los elem pares de bits (elem letras del genoma) del numero en cuestion
-    search_gen();
-    search_gen();
-    search_gen();
-    search_gen();
-    search_gen();
-    search_gen();
-    search_gen();
-    search_gen();
-    search_gen();
-    search_gen();
-    search_gen();
-    search_gen();
-    search_gen();
-    search_gen();
-    search_gen();
-    search_gen();
-    search_gen();
-    search_gen();
-    search_gen();
-    search_gen();
-    search_gen();
-    search_gen();
-    search_gen();
-    search_gen();
-    search_gen();
-    search_gen();
-    search_gen();
-    search_gen();
-    search_gen();
-    search_gen();
-    search_gen();
-    search_gen();
-  }
-  
-  // Recorrer los n ultimos pares de bits del primer numero (inicio de la cadena)
-  tmp  = values[c][init_num];
-  
-  for (i = elem; i >= init_num_pos; i--, pos++) {
-    search_gen();
-  }
-  
-  return;
 }
 
 //------------------------------------------------------------------------------------

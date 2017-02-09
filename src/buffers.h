@@ -288,13 +288,15 @@ typedef struct bs_context {
   size_t MUT_methyl;                 /**< Partial Counter for mutated Cytosines                     */
   size_t num_bases;                  /**< Partial Counter for number of bases in the batch          */
   
-  array_list_t *context_CpG;             /**< Array with the sequences from CpG context to write */
-  array_list_t *context_CHG;             /**< Array with the sequences from CHG context to write */
-  array_list_t *context_CHH;             /**< Array with the sequences from CHH context to write */
-  array_list_t *context_MUT;             /**< Array with the sequences from mutations to write   */
+  array_list_t *context_CpG;         /**< Array with the sequences from CpG context to write */
+  array_list_t *context_CHG;         /**< Array with the sequences from CHG context to write */
+  array_list_t *context_CHH;         /**< Array with the sequences from CHH context to write */
+  array_list_t *context_MUT;         /**< Array with the sequences from mutations to write   */
+
+  uint32_t *methyl_reads;            /**< Array with the number of methylated reads per chromosome */
 } bs_context_t;
 
-bs_context_t *bs_context_new(size_t num_reads);
+bs_context_t *bs_context_new(size_t num_reads, size_t num_chromosomes);
 void bs_context_free(bs_context_t *bs_context);
 
 //====================================================================================

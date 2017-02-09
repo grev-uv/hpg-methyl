@@ -35,7 +35,7 @@ SConscript(['%s/SConscript' % bioinfo_path,
             '%s/SConscript' % commons_path
             ], exports = ['env', 'debug', 'compiler'])
 
-env.Program('#bin/hpg-aligner',
+env.Program('#bin/hpg-methyl',
              source = [Glob('src/*.c'),
 	               Glob('src/build-index/*.c'),
 	               Glob('src/dna/*.c'),

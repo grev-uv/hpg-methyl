@@ -12,6 +12,7 @@
 
 #include "aligners/sw/smith_waterman.h"
 #include "aligners/bwt/genome.h"
+#include "bioformats/bam/bam_tags.h"
 
 #include "timing.h"
 #include "buffers.h"

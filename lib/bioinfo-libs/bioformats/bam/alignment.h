@@ -4,10 +4,8 @@
 #include <stdio.h>
 
 #include "commons/commons.h"
-
 #include "samtools/bam.h"
-
-//#include "bam_commons.h"
+#include "bam_tags.h"
 
 #define MIN_ALLOCATED_SIZE_FOR_CIGAR_STRING  	5
 #define HUMAN      				1 //Specie: Human
@@ -61,6 +59,7 @@ typedef struct alignment {
     char* quality;			/**< Quality of nts. */
     char* cigar;			/**< CIGAR string. */
     uint8_t* optional_fields;		/**< Optional fields. */
+    array_list_t* optional_tags;    /**< List of optional BAM tag objects */
 } alignment_t;
 
 /**
@@ -109,37 +108,6 @@ alignment_t* alignment_new();
 void alignment_init_single_end(char* query_name, char* sequence, char* quality, short int strand, short int chromosome, int position, char* cigar, short int num_cigar_operations, int map_quality, short int is_seq_mapped, short int secondary_alignment, int optional_fields_length, char *optional_fields, alignment_t* alignment_p);
 
 /**
-*  @brief Inits an alignment with a single end mapping
-*  @param query_name name of the mapped read
-*  @param sequence1 sequence string for paired end 1
-*  @param sequence2 sequence string for paired end 2
-*  @param quality1 quality string for paired end 1
-*  @param quality2 quality string for paired end 2
-*  @param strand1 strand of the alignment (1: forward, 0: reverse) for paired end 1
-*  @param strand2 strand of the alignment (1: forward, 0: reverse) for paired end 2
-*  @param chromosome1 chromosome of the alignment for paired end 1
-*  @param chromosome2 chromosome of the alignment for paired end 2
-*  @param position1 start position of the alignment for paired end 1
-*  @param position2 start position of the alignment for paired end 2
-*  @param cigar1 cigar (string format) for paired end 1
-*  @param cigar2 cigar (string format) for paired end 2
-*  @param num_cigar_operations1 number of cigar operations for paired end 1
-*  @param num_cigar_operations2 number of cigar operations for paired end 2
-*  @param map_quality1 quality of the mapping for paired end 1
-*  @param map_quality2 quality of the mapping for paired end 2
-*  @param secondary_alignment1 flag indicating if alignment is primary for paired end 1
-*  @param secondary_alignment1 flag indicating if alignment is primary for paired end 2
-*  @param[in,out] alignment1_p pointer to the alignment to init for paired end 1
-*  @param[in,out] alignment2_p pointer to the alignment to init for paired end 2
-*  @return pointer to the created qc hash list item
-*  
-*  Creates and returns a new qc hash list item
-*/
-void alignment_init_paired_end(char* query_name, char* sequence1, char* sequence2, char* quality1, char* quality2, short int strand1, short int strand2, short int chromosome1, int position1, int position2, short int chromosome2, char* cigar1, char* cigar2, short int num_cigar_operations1, short int num_cigar_operations2, short int map_quality1, short int map_quality2, short int secondary_alignment1, short int secondary_alignment2,  alignment_t* alignment1_p, alignment_t* alignment2_p);
-
-void alignment_update_paired_end(alignment_t* alignment1_p, alignment_t* alignment2_p);
-
-/**
 *  @brief Creates an alignment from a bam1_t structure
 *  @param bam_p pointer to the bam1_t structure
 *  @param base_quality base quality for quality values normalization
@@ -167,25 +135,6 @@ void alignment_free(alignment_t* alignment_p);
 *  Creates and returns an alignment from a bam1_t structure
 */
 bam1_t* convert_to_bam(alignment_t* alignment_p, int base_quality);
-
-/**
-*  @brief Prints the content of an alignment
-*  @param alignment_p pointer to the alignment to print
-*  @return void
-*  
-*  Prints the content of an alignment
-*/
-void alignment_print(alignment_t* aligment_p);
-
-/**
-*  @brief Prints the content of a bam1_t structure
-*  @param bam_p pointer to the bam1_t to print
-*  @param base_quality base quality for quality values normalization
-*  @return void
-*  
-*  Prints the content of a bam1_t structure
-*/
-void bam_print(bam1_t* bam_p, int base_quality);
 
 /**
 *  @brief Creates a bam_header_t
@@ -291,11 +240,6 @@ void convert_to_quality_uint8_t(uint8_t* data, char* quality_p, int quality_leng
 
 char select_op(unsigned char status);
 
-/**
- */
-char* generate_cigar_str(char *str_seq_p, char *str_ref_p, unsigned int start_seq, 
-			 unsigned int seq_orig_len, unsigned int length, 
-			 int *distance, int *number_op_tot);
 
 #endif /* ALIGNMENTS_H */
 

@@ -48,8 +48,14 @@ be stored.
 
 When running with the `--write-mcontext` command line option, the
 application performs an analysis of the methylation status for every
-mapped read. This data is stored as individual CSV files, containing
-the methylation status for each possible context (CpG, CHH, CHG and MUT).
+mapped read.
+
+This data is stored as individual CSV files, containing the methylation
+status for each possible context (CpG, CHH, CHG and MUT), and in the
+optional tags of the BAM file alignments, following the naming used by
+[Bismark](http://www.bioinformatics.babraham.ac.uk/projects/bismark/).
+
+### CSV File Format
 
 The output CSV files have the following fields:
 
@@ -73,7 +79,27 @@ An example entry of the methylation output is:
 |------------|--------|------------|-------|---------|--------|
 |1_89741628_1_0_1_0_0_0:1:0_0:0:0_1a2|-|0|89741698|Unmeth CHH|Positive|
 
+### BAM Optional Tag Format
 
+The alignments in the output BAM file have the following optional tags:
+
+| Tag name | Type | SAM Type | Description | Possible values |
+|----------|------|----------|-------------|-----------------|
+|   AS     |Number| i        | Alignment score. |0 or greater |
+|   NH     |Number| i        | Number of reported alignments containing the query in the current record.| 0 or greater |
+|   NM     |Number| i        | Edit distance to the reference, including ambiguous bases but excluding clipping.| 0 or greater |
+|   XM     |String| Z        | Per-base methylation context | **z** / **Z**, **x** / **X**, **h** / **H**, **u** / **U**, **.** (dot)|
+|   XG     |Number| i        | Alignment conversion state | **CT**, **GA** |
+|   XR     |Number| i        | Read conversion state | **CT**, **GA** |
+|   ZM     |Number| i        | Number of methylated C's in the alignment | 0 ~ Sequence length |
+
+Tags can be extracted using `samtools` with the `view` command, following is
+an example query of a methylated SAM alignment:
+
+
+```
+Example 256 1 234085256 234 2H34M2D39M * 0 0 GGGAATTAA(···)TTAGTG a!!!(···)!!!! AS:i:0 NH:i:5 NM:i:1 ZM:i:6 XG:Z:CT XR:Z:CT XM:Z:.......hh....(···)...M.......
+```
 
 ## Mapped read filtering
 

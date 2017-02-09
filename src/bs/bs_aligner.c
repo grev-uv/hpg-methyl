@@ -59,7 +59,9 @@ void run_bs_aligner(genome_t *genome2, genome_t *genome1, genome_t *genome,
   metil_file_init(metil_file, options->output_name, genome);
   writer_input.metil_file = metil_file;
   
-  // Writing bam header
+  // Allocating BAM header and filling with the genome information
+  // The header is rewriten when all the processing is complete,
+  // to store the methylation global statistics as header comments
   bam_header_t *bam_header = create_bam_header_by_genome(genome);
   writer_input.bam_file = bam_fopen_mode(output_filename, bam_header, "w");
   bam_fwrite_header(bam_header, writer_input.bam_file);
@@ -186,6 +188,12 @@ void run_bs_aligner(genome_t *genome2, genome_t *genome1, genome_t *genome,
   batch_free(batch);
 
   LOG_DEBUG("========= END FREEING MEMORY =========\n");
+
+  // Generate the per-chromosome methylation statistics
+  // to be used with the hydroximethylation mapper
+  if (options->write_mcontext) {
+    generate_chr_methylation_stats(metil_file, bwt_input.genome->num_chromosomes, options, writer_input.bam_file);
+  }
 
   // Show statistics for cytosines methylated/unmethylated
   FILE * STAT = metil_file->STAT;
@@ -337,4 +345,58 @@ void run_bs_aligner(genome_t *genome2, genome_t *genome1, genome_t *genome,
     printf("\n\tTotal SWs: %lu, Max time = %0.4f, Throughput = %0.2f SW/s\n", 
 	          total_item, max_time / 1e6, total_throughput);
   }
+}
+
+//------------------------------------------------------------------------------------
+
+void generate_chr_methylation_stats(metil_file_t *metil_file, size_t num_chromosomes, const options_t *options, bam_file_t *bam_file) {
+  // Generate the file name
+  size_t path_length = strlen(options->output_name);
+  size_t prefix_length = 0;
+
+  if (options->prefix_name) {
+    prefix_length = strlen(options->prefix_name);
+  }
+  
+  char *reads_results = (char *) calloc((60 + prefix_length), sizeof(char));
+  char *output_filename = (char *) calloc((path_length + prefix_length + 60), sizeof(char));
+  
+  if (options->prefix_name) {
+    strcat(reads_results, "/");
+    strcat(reads_results, options->prefix_name);
+    strcat(reads_results, "_methyl_stats.bin");  
+  } else {
+    strcat(reads_results, "/methyl_stats.bin");
+  }
+  
+  strcat(output_filename, options->output_name);
+  strcat(output_filename, reads_results);
+  free(reads_results);
+  
+  // First, store in its independent file
+  FILE *fd = fopen(output_filename, "w");
+  
+  if (fd) {
+    // Allocate 1 byte for the chromosome count
+    // and 4 bytes per chromosome to store the
+    // methylated read count
+    size_t meth_size = sizeof(uint32_t) * num_chromosomes + sizeof(uint8_t);
+    uint8_t* meth_buf = calloc(meth_size, sizeof(uint8_t));
+
+    // Set the chromosome count
+    meth_buf[0] = num_chromosomes;
+
+    // Copy the methylated read count
+    for (size_t i = 0, k = 1; i < num_chromosomes; ++i, k += 4) {
+      memcpy(meth_buf + k, &metil_file->methyl_reads[i], sizeof(uint32_t));
+    }
+
+    // Write the buffer
+    fwrite(meth_buf, sizeof(uint8_t), meth_size, fd);
+    free(meth_buf);
+
+    fclose(fd);
+  }
+
+  free(output_filename);
 }

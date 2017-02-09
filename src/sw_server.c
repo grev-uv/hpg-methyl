@@ -621,8 +621,10 @@ void apply_sw_bs_4nt(sw_server_input_t* input, batch_t *batch) {
   alignment_t *alignment;
   array_list_t *alignment_list;
 
-  char *p, *optional_fields;
-  int optional_fields_length, AS;
+  // Kept for legacy reasons, using the tag object list now
+  // Should be refactored in the future
+  char *optional_fields = NULL;
+  int optional_fields_length = 100;
 
   array_list_t **mapping_lists;
   size_t num_targets;
@@ -690,28 +692,6 @@ void apply_sw_bs_4nt(sw_server_input_t* input, batch_t *batch) {
           match_qual = (char *) malloc((match_len + 1)* sizeof(char));
           memcpy(match_qual, &read->quality[match_start], match_len);
           match_qual[match_len] = 0;
-          
-          // set optional fields
-          optional_fields_length = 100;
-          optional_fields = (char *) calloc(optional_fields_length, sizeof(char));
-          
-          p = optional_fields;
-          AS = (int) norm_score * 100;
-        
-          sprintf(p, "ASi");
-          p += 3;
-          memcpy(p, &AS, sizeof(int));
-          p += sizeof(int);
-          
-          sprintf(p, "NHi");
-          p += 3;
-          memcpy(p, &num_cals, sizeof(int));
-          p += sizeof(int);
-          
-          sprintf(p, "NMi");
-          p += 3;
-          memcpy(p, &cigar_code->distance, sizeof(int));
-          p += sizeof(int);
         
           // create an alignment and insert it into the list
           alignment = alignment_new();
@@ -728,6 +708,23 @@ void apply_sw_bs_4nt(sw_server_input_t* input, batch_t *batch) {
                   norm_score * 254, 1, (num_cals > 1),
                   optional_fields_length, optional_fields, alignment);
           
+          // set optional fields
+          bam_tag_t* as_tag = bam_tag_init(AS_TAG_NAME, BAM_TAG_TYPE_INT, 0, 0);
+          bam_tag_t* nh_tag = bam_tag_init(NH_TAG_NAME, BAM_TAG_TYPE_INT, 0, 0);
+          bam_tag_t* nm_tag = bam_tag_init(NM_TAG_NAME, BAM_TAG_TYPE_INT, 0, 0);
+
+          bam_int_t AS = (bam_int_t) norm_score * 100;
+          bam_int_t NH = num_cals;
+          bam_int_t NM = cigar_code->distance;
+
+          bam_tag_set_scalar(as_tag, &AS);
+          bam_tag_set_scalar(nh_tag, &NH);
+          bam_tag_set_scalar(nm_tag, &NM);
+
+          array_list_insert(as_tag, alignment->optional_tags);
+          array_list_insert(nh_tag, alignment->optional_tags);
+          array_list_insert(nm_tag, alignment->optional_tags);
+
           array_list_insert(alignment, alignment_list);
 
           LOG_DEBUG_F("creating alignment (bs_id = %i)...\n", bs_id);

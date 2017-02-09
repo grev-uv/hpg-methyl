@@ -11,14 +11,36 @@ bam_header_t *create_bam_header_by_genome(genome_t *genome) {
   bam_header->n_targets = num_targets;
   bam_header->target_name = (char **) calloc(num_targets, sizeof(char *));
   bam_header->target_len = (uint32_t*) calloc(num_targets, sizeof(uint32_t));
-  bam_header->text = strdup("@PG\tID:HPG-Aligner\tVN:1.0\n");
+
+  // Allocate free space to store the global methylation statistics
+  const char *header_pg = "@PG\tID:HPG-Methyl\tVN:3.1\n";
+  const char *header_co = "@CO\tZM:00\tC:00000000000\n";
+
+  size_t pg_len = strlen(header_pg);
+  size_t co_len = strlen(header_co);
+  size_t header_tx_len = 1 + strlen(header_pg) + num_targets * (1 + strlen(header_co));
+
+  bam_header->text = calloc(header_tx_len, sizeof(char));
+  memcpy(bam_header->text, header_pg, pg_len);
+
+  char tg_str[4];
+
+  for (size_t i = 0, k = pg_len; i < num_targets; ++i, k += co_len) {
+    memcpy(bam_header->text + k, header_co, co_len);
+    snprintf(tg_str, 4, "%02lu", i);
+
+    bam_header->text[k + 7] = tg_str[0];
+    bam_header->text[k + 8] = tg_str[1];
+  }
+
+  bam_header->text[header_tx_len - 1] = '\n';
 
   for (int i = 0; i < num_targets; i++) {
     bam_header->target_name[i] = strdup(genome->chr_name[i]);
     bam_header->target_len[i] = genome->chr_size[i] + 1;
   }
 
-  bam_header->l_text = strlen(bam_header->text);
+  bam_header->l_text = header_tx_len;
 
   return bam_header;
 }
