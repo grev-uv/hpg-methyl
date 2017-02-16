@@ -310,7 +310,7 @@ char* bam_tag_to_string(const bam_tag_t **items, size_t count, size_t *out_lengt
       case BAM_TAG_TYPE_STRING:
         {
           bam_string_t *str = (bam_string_t*)tag->data;
-          result_sz += str->count + 1;
+          result_sz += str->count + 2;
         }
         break;
 

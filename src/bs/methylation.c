@@ -156,19 +156,24 @@ void revert_mappings_seqs(array_list_t **src1, array_list_t **src2, array_list_t
 //------------------------------------------------------------------------------------
 
 char *obtain_seq(alignment_t *alig, fastq_read_t * orig) {
-  char *read = orig->sequence;
-  char *cigar = strdup(alig->cigar);
-  char *seq = (char *)calloc(1024, sizeof(char));
-
   int cont, pos = 0, pos_read = 0, num, operations;
+  int offset = 0, current_offset = 0; 
+  int seq_len = orig->length;
   char car;
   
+  char *read = orig->sequence;
+  char *cigar = strdup(alig->cigar);
+  char *seq = (char *)calloc(seq_len, sizeof(char));
+  
   for (operations = 0; operations < alig->num_cigar_operations; operations++) {
-    sscanf(cigar, "%i%c%s", &num, &car, cigar);
+    sscanf(&cigar[offset], "%i%c%n", &num, &car, &current_offset);
+    offset += current_offset;
 
     if (car == 'M' || car == '=' || car == 'X') {
       for (cont = 0; cont < num; cont++, pos++, pos_read++) {
-	      seq[pos] = read[pos_read];
+        if (pos_read < seq_len && pos < seq_len) {
+	        seq[pos] = read[pos_read];
+        }
       }
     } else {
       if (car == 'D' || car == 'N') {
@@ -176,7 +181,9 @@ char *obtain_seq(alignment_t *alig, fastq_read_t * orig) {
       } else {
         if (car == 'I' || car == 'H' || car == 'S') {
           for (cont = 0; cont < num; cont++, pos++) {
-            seq[pos] = '-';
+            if (pos < seq_len) {
+              seq[pos] = '-';
+            }
           }
         }
       }
@@ -218,6 +225,11 @@ void metil_file_init(metil_file_t *metil_file, char *dir, genome_t *genome) {
   metil_file->CHH  = fopen(metil_file->filenameCHH,  "w");
   metil_file->MUT  = fopen(metil_file->filenameMUT,  "w");
   metil_file->STAT = fopen(metil_file->filenameSTAT, "w");
+
+  metil_file->skip_cpg = 0;
+  metil_file->skip_chh = 0;
+  metil_file->skip_chg = 0;
+  metil_file->skip_mut = 0;
 
   FILE *a;
 
@@ -409,7 +421,7 @@ void add_metilation_status(array_list_t *array_list, bs_context_t *bs_context, g
 
       // Increase the counter number of bases
       len = orig->length;
-      gen = (char *)calloc(len + 5, sizeof(char));
+      gen = (char *)calloc(len + 6, sizeof(char));
 
       start = alig->position + 1;
       end = start + len + 4;
@@ -711,27 +723,23 @@ void write_bs_context(metil_file_t *metil_file, bs_context_t *bs_context, size_t
     metil_file->methyl_reads[i] += bs_context->methyl_reads[i];
   }
 
-  if (CpG == NULL) {
-    printf("reopen CpG file\n");
+  if (CpG == NULL && !metil_file->skip_cpg) {
     CpG = fopen(metil_file->filenameCpG, "a");
   }
 
-  if (CHG == NULL) {
-    printf("reopen CHG file\n");
+  if (CHG == NULL && !metil_file->skip_chg) {
     CHG = fopen(metil_file->filenameCHG, "a");
   }
 
-  if (CHH == NULL) {
-    printf("reopen CHH file\n");
+  if (CHH == NULL && !metil_file->skip_chh) {
     CHH = fopen(metil_file->filenameCHH, "a");
   }
 
-  if (MUT == NULL) {
-    printf("reopen CHH file\n");
+  if (MUT == NULL && !metil_file->skip_mut) {
     MUT = fopen(metil_file->filenameMUT, "a");
   }
 
-  if (context_CpG != NULL) {
+  if (context_CpG != NULL && CpG) {
     num_items = array_list_size(context_CpG);
 
     for (int i = num_items - 1; i >= 0; i--) {
@@ -743,13 +751,18 @@ void write_bs_context(metil_file_t *metil_file, bs_context_t *bs_context, size_t
       metil_data_free(metil_data);
       
       if (file_error < 0) {
-        printf("Error on write\n");
-        exit(-1);
+        printf("Error writting the CpG context file: %s\n\n", strerror(errno));
+        printf("Written %i of %lu CpG methylated bases, skipping the remaining bases.\nCheck the BAM file to retrieve all the information.\n\n", i, num_items);
+
+        fclose(metil_file->CpG);
+        metil_file->skip_cpg = 1;
+
+        break;
       }
     }
   }
 
-  if (context_CHG != NULL) {
+  if (context_CHG != NULL && CHG) {
     num_items = array_list_size(context_CHG);
 
     for (int i = num_items - 1; i >= 0; i--) {
@@ -761,13 +774,18 @@ void write_bs_context(metil_file_t *metil_file, bs_context_t *bs_context, size_t
       metil_data_free(metil_data);
       
       if (file_error < 0) {
-        printf("Error on write\n");
-        exit(-1);
+        printf("Error writting the CHG context file: %s\n\n", strerror(errno));
+        printf("Written %i of %lu CHG methylated bases, skipping the remaining bases.\nCheck the BAM file to retrieve all the information.\n\n", i, num_items);
+        
+        fclose(metil_file->CHG);
+        metil_file->skip_chg = 1;
+
+        break;
       }
     }
   }
 
-  if (context_CHH != NULL) {
+  if (context_CHH != NULL && CHH) {
     num_items = array_list_size(context_CHH);
 
     for (int i = num_items - 1; i >= 0; i--) {
@@ -779,13 +797,18 @@ void write_bs_context(metil_file_t *metil_file, bs_context_t *bs_context, size_t
       metil_data_free(metil_data);
       
       if (file_error < 0) {
-        printf("Error on write\n");
-        exit(-1);
+        printf("Error writting the CHH context file: %s\n\n", strerror(errno));
+        printf("Written %i of %lu CHH methylated bases, skipping the remaining bases.\nCheck the BAM file to retrieve all the information.\n\n", i, num_items);
+        
+        fclose(metil_file->CHH);
+        metil_file->skip_chh = 1;
+
+        break;
       }
     }
   }
  
-  if (context_MUT != NULL) {
+  if (context_MUT != NULL && MUT) {
     num_items = array_list_size(context_MUT);
     for (int i = num_items - 1; i >= 0; i--) {
       metil_data = (metil_data_t *)array_list_get(i, context_MUT);
@@ -796,8 +819,13 @@ void write_bs_context(metil_file_t *metil_file, bs_context_t *bs_context, size_t
       metil_data_free(metil_data);
       
       if (file_error < 0) {
-        printf("Error on write\n");
-        exit(-1);
+        printf("Error writting the MUT context file: %s\n\n", strerror(errno));
+        printf("Written %i of %lu MUT methylated bases, skipping the remaining bases.\nCheck the BAM file to retrieve all the information.\n\n", i, num_items);
+        
+        fclose(metil_file->MUT);
+        metil_file->skip_mut = 1;
+        
+        break;
       }
     }
   }

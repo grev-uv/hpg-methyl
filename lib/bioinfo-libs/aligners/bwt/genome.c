@@ -420,7 +420,6 @@ void genome_read_sequence_by_chr_index(char* sequence, unsigned int strand,
   }
 
   sequence[seq_pos] = '\0';
-
 }
 
 

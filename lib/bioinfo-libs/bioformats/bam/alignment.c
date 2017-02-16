@@ -440,7 +440,14 @@ void convert_to_sequence_uint8_t(uint8_t* data, char* sequence_p, int sequence_l
 //------------------------------------------------------------------------------------
 
 void convert_to_quality_uint8_t(uint8_t* data, char* quality_p, int quality_length, int base_quality) {
-    for (int i = 0; i < quality_length; i++) {
+    size_t quality_p_length = strnlen(quality_p, quality_length);
+    size_t len = quality_length;
+
+    if (quality_p_length < quality_length) {
+        len = quality_p_length;
+    }
+
+    for (int i = 0; i < len; i++) {
         *data++ = (uint8_t)(quality_p[i] - base_quality);
     }
 }

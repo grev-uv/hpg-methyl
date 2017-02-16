@@ -208,18 +208,25 @@ char *new_cigar_code_string(cigar_code_t *p) {
     return NULL; 
   }
 
-  char *str = (char *)calloc(num_ops*10, sizeof(char));
-  *str = 0;
+  // Using sprintf to append data to the same buffer produces a
+  // memory overlapping memcpy! This is undefined behavior under
+  // the C standard
+  char *str = (char *)calloc(num_ops * 16 + 1, sizeof(char));
+  char temp[16];
 
   cigar_op_t *op;
   
+  // Use safe functions to prevent buffer overflows if the CIGAR
+  // op length overflowed and the resulting string was too long
+  // to fit
   for (int i = 0; i < num_ops; i++) {
     op = array_list_get(i, p->ops);
-    sprintf(str, "%s%i%c", str, op->number, op->name);
+    
+    snprintf(temp, 16, "%i%c", op->number, op->name);
+    strncat(str, temp, 16);
   }
 
   p->cigar_str = str;
-  
   return p->cigar_str;
 }
 

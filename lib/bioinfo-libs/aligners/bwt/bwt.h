@@ -19,26 +19,14 @@
 #include "BW_preprocess.h"
 
 #define NONE_HARD_CLIPPING 0
-#define START_HARD_CLIPPING 1
-#define END_HARD_CLIPPING 2
-
-#define NO_CALS 1
-#define EXTRA_CALS 2
 
 #define BACKWARD_ANCHOR 0
 #define FORWARD_ANCHOR  1
-
-#define EXTRA_SEED_NONE 0
-#define EXTRA_SEED_START 1
-#define EXTRA_SEED_END 2
 
 #ifndef MAX
   #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 #endif
 
-double global_parallel, global_sequential;
-
-double time_bwt, time_search, time_bwt_seed, time_search_seed;
 //-----------------------------------------------------------------------------
 // Paratemers for the candidate alignment localizations (CALs)
 //-----------------------------------------------------------------------------
@@ -111,7 +99,6 @@ cal_t *cal_new(const size_t chromosome_id,
 
 void cal_free(cal_t *cal);
 
-void cal_print(cal_t *cal);
 
 //-----------------------------------------------------------------------------
 //Ricardo - Modified in order to perform BWT in interior intervals of the read
@@ -149,18 +136,6 @@ typedef struct interval {
 	size_t end;
 } interval_t;
 
-
-region_t *region_bwt_new(const size_t chromosome_id, 
-			 const short int strand,
-			 const size_t start, 
-			 const size_t end,
-			 const size_t seq_start,
-			 const size_t seq_end,
-			 const size_t seq_len,
-			 const int id);
-
-void region_bwt_free(region_t *region);
-
 //-----------------------------------------------------------------------------
 
 typedef struct short_cal {
@@ -192,8 +167,6 @@ typedef struct read_cals {
   array_list_t *cal_list; // array list of cal_t structures
 } read_cals_t;
 
-read_cals_t *read_cals_new(fastq_read_t *read);
-void read_cals_free(read_cals_t *read_cals);
 
 
 //-----------------------------------------------------------------------------
@@ -262,25 +235,12 @@ typedef struct read_mappings {
   array_list_t *mapping_list; // array list of mapping_t structures
 } read_mappings_t;
 
-read_cals_t *read_cals_new(fastq_read_t *read);
-void read_cals_free(read_cals_t *read_cals);
-
 //-----------------------------------------------------------------------------
 // general functions
 //-----------------------------------------------------------------------------
 
 alignment_t* add_optional_fields(alignment_t *alignment, size_t n_mappings);
 
-/**
- * @brief  Makes the reverse and complementary from the input sequence.
- * @param  seq input sequence
- * @param  len sequence length input
- * 
- * Makes the reverse and complementary read from input sequence. For it
- * the read input is walked from end to start and all nucleotides are 
- * changed for their complementaries. 
- */
-void seq_reverse_complementary(char *seq, unsigned int len);
 
 /**
  */
@@ -322,18 +282,6 @@ size_t bwt_map_inexact_batch(fastq_batch_t *batch,
 			     fastq_batch_t *unmapped_batch,
 			     array_list_t *mapping_list);
 
-
-size_t bwt_map_inexact_read(fastq_read_t *read, 
-			    bwt_optarg_t *bwt_optarg, 
-			    bwt_index_t *index, 
-			    array_list_t *mapping_list);
-
-size_t bwt_map_inexact_read_bs(fastq_read_t *read, 
-			       bwt_optarg_t *bwt_optarg, 
-			       bwt_index_t *index, 
-			       array_list_t *mapping_list, 
-			       int type);
-
 interval_t* bwt_map_inexact_read_bs_new(fastq_read_t *read,
 			       bwt_optarg_t *bwt_optarg,
 			       bwt_index_t *index,
@@ -345,21 +293,11 @@ interval_t* bwt_map_inexact_read_bs_new(fastq_read_t *read,
 // seed functions
 //-----------------------------------------------------------------------------
 
-size_t bwt_map_exact_seeds_seq_by_num(char *seq, size_t num_seeds,
-				      size_t seed_size, size_t min_seed_size,
-				      bwt_optarg_t *bwt_optarg, bwt_index_t *index, 
-				      array_list_t *mapping_list);
-
 size_t bwt_map_exact_seeds_between_coords(int start_position, int end_position, 
 					  char *seq, int seed_size, int min_seed_size,
 					  bwt_optarg_t *bwt_optarg, bwt_index_t *index, 
 					  array_list_t *mapping_list, int extra_seed,
 					  int *last_seed_id);
-
-size_t bwt_map_exact_seeds_seq_by_num_bs(char *seq, size_t num_seeds,
-					 size_t seed_size, size_t min_seed_size,
-					 bwt_optarg_t *bwt_optarg, bwt_index_t *index, 
-					 array_list_t *mapping_list);
 
 
 //-----------------------------------------------------------------------------
@@ -367,10 +305,6 @@ size_t bwt_map_exact_seeds_seq_by_num_bs(char *seq, size_t num_seeds,
 //-----------------------------------------------------------------------------
 
 
-// changed by Mariano
-size_t bwt_generate_cals_bs(char *seq, char *seq2, size_t seed_size, size_t _min_cal_size, bwt_optarg_t *bwt_optarg, 
-			    bwt_index_t *index, bwt_index_t *index2, array_list_t *cal_list);
-// end: Mariano
 
 size_t bwt_generate_cals_between_coords(int strand_target, int chromosome_target,
 					size_t start_target, size_t end_target, 
@@ -400,12 +334,6 @@ void bwt_map_inexact_array_list_by_filter(array_list_t *reads,
 					  size_t *num_unmapped, 
 					  size_t *unmapped_indices);
 
-void bwt_map_inexact_array_list_by_filter_bs(array_list_t *reads,
-					     bwt_optarg_t *bwt_optarg, 
-					     bwt_index_t *index,
-					     array_list_t **lists,
-					     size_t *num_unmapped, 
-					     size_t *unmapped_indices);
 
 size_t bwt_map_forward_inexact_seq(char *seq, 
 				   bwt_optarg_t *bwt_optarg, 
@@ -436,22 +364,10 @@ void append_seed_region_linked_list(linked_list_t* sr_list,
 void initReplaceTable_bs(const char *str);
 
 char * readNucleotide(const char *directory, const char *name);
-void saveNucleotide(char *nucleotide, const char *directory, const char *name);
 //-----------------------------------------------------------------------------
 
 void insert_seeds_and_merge_anchor(array_list_t *mapping_list, linked_list_t ***cals_list,  size_t max_cal_distance, int id_start);
 
-//--------------------------------------------------------------------------------------
-// In case the build is being compiled with all optimizations disabled (ie: debug build)
-// inline functions must be forward declared to enable the compiler to find the appropriate
-// simbols to link into them on all the translation units.
-// - Date: 14 / 11 / 2016
-// - Who: Cesar
-#ifdef __GNUC__
-#ifdef __NO_INLINE__
-static size_t seeding_bs(char*, size_t, size_t, size_t, size_t, bwt_optarg_t*, bwt_index_t*, array_list_t*);
-static size_t seeding(char*, size_t, size_t, size_t, size_t, bwt_optarg_t*, bwt_index_t*, array_list_t*);
-#endif
-#endif
+
 
 #endif // BWT_H

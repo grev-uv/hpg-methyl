@@ -1,13 +1,7 @@
 #include "bwt.h"
 #include <stdbool.h>
 
-//-----------------------------------------------------------------------------
-// added by JT and PP
-size_t __bwt_map_inexact_read_bs(fastq_read_t *read,
-				 bwt_optarg_t *bwt_optarg, 
-				 bwt_index_t *index, 
-				 array_list_t *mapping_list, 
-				 int type);
+
 
 interval_t* __bwt_map_inexact_read_bs_new(fastq_read_t *read,
 				 bwt_optarg_t *bwt_optarg,
@@ -61,76 +55,6 @@ char* bwt_encode_Bases(char* dest, char* src, unsigned int length, int *table) {
 
   return dest;
 }
-
-
-// end of added by JT and PP
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// exact functions
-//-----------------------------------------------------------------------------
-
-size_t bwt_map_exact_seq(char *seq, 
-			 bwt_optarg_t *bwt_optarg, 
-			 bwt_index_t *index, 
-			 array_list_t *mapping_list);
-
-size_t bwt_map_exact_read(fastq_read_t *read, 
-			  bwt_optarg_t *bwt_optarg, 
-			  bwt_index_t *index, 
-			  array_list_t *mapping_list);
-
-size_t bwt_map_exact_seqs(char **seqs, 
-			  size_t num_reads,
-			  bwt_optarg_t *bwt_optarg, 
-			  bwt_index_t *index, 
-			  char *out_status,
-			  array_list_t *mapping_list);
-
-size_t bwt_map_exact_batch(fastq_batch_t *batch,
-			   bwt_optarg_t *bwt_optarg, 
-			   bwt_index_t *index, 
-			   fastq_batch_t *unmapped_batch,
-			   array_list_t *mapping_list);
-
-//------------------------------------------------------------------------------
-
-size_t bwt_map_exact_seed(char *seq, size_t seq_len, 
-			  size_t start, size_t end,
-			  bwt_optarg_t *bwt_optarg,
-			  bwt_index_t *index,
-			  array_list_t *mapping_list);
-
-//-----------------------------------------------------------------------------
-// inexact functions
-//-----------------------------------------------------------------------------
-
-size_t bwt_map_inexact_seq(char *seq, 
-			   bwt_optarg_t *bwt_optarg, 
-			   bwt_index_t *index, 
-			   array_list_t *mapping_list);
-
-size_t bwt_map__forward_inexact_seq(char *seq, 
-				    bwt_optarg_t *bwt_optarg, 
-				    bwt_index_t *index, 
-				    array_list_t *mapping_list);
-
-size_t bwt_map_inexact_read(fastq_read_t *read, 
-			    bwt_optarg_t *bwt_optarg, 
-			    bwt_index_t *index, 
-			    array_list_t *mapping_list);
-
-size_t bwt_map_inexact_seqs(char **seqs, 
-			    size_t num_reads,
-			    bwt_optarg_t *bwt_optarg, 
-			    bwt_index_t *index, 
-			    char *out_status,
-			    array_list_t *mapping_list);
-
-
-//------------------------------------------------------------------------------
-
-char *bwt_error_type(char error_kind);
 
 //-----------------------------------------------------------------------------
 
@@ -236,22 +160,6 @@ void bwt_generate_index_files_bs(char *ref_file, char *output_dir,
   free(Scompi.vector);
   saveUIntCompVector(&Rcompi, output_dir, "Rcompi");
   free(Rcompi.vector);
-}
-
-//-----------------------------------------------------------------------------
-// general bs functions
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// inexact functions
-//-----------------------------------------------------------------------------
-
-size_t bwt_map_inexact_read_bs(fastq_read_t *read, 
-			       bwt_optarg_t *bwt_optarg, 
-			       bwt_index_t *index, 
-			       array_list_t *mapping_list,
-			       int type) {
-  return 0; // Unused
 }
 
 //-----------------------------------------------------------------------------
@@ -368,7 +276,7 @@ interval_t* __bwt_map_inexact_read_bs_new(fastq_read_t *read,
   error = MISMATCH;
 
 
-  char *quality_clipping = (char *) malloc(sizeof(char) * 50);
+  char *quality_clipping = (char *) calloc(len + 1, sizeof(char));
   seq_dup = (char *) malloc(sizeof(char) * (len + 1));
 
   new_results_list(&r_list, bwt_optarg->filter_read_mappings);
@@ -655,53 +563,6 @@ exit:
   return interval;
 }
 
-//-----------------------------------------------------------------------------
-
-size_t __bwt_map_inexact_read_bs(fastq_read_t *read,
-				 bwt_optarg_t *bwt_optarg, 
-				 bwt_index_t *index, 
-				 array_list_t *mapping_list,
-				 int type) {
- return 0; // Unused
-}
-//-----------------------------------------------------------------------------
-
-void bwt_map_inexact_array_list_by_filter_bs(array_list_t *reads,
-					     bwt_optarg_t *bwt_optarg, 
-					     bwt_index_t *index,
-					     array_list_t **lists,
-					     size_t *num_unmapped, 
-					     size_t *unmapped_indices) {
-  // Unused
-}
-
-//-----------------------------------------------------------------------------
-
-inline size_t seeding_bs(char *code_seq, size_t seq_len, size_t num_seeds,
-			 size_t seed_size, size_t min_seed_size,
-			 bwt_optarg_t *bwt_optarg, bwt_index_t *index,
-			 array_list_t *mapping_list) {
-  return 0; // Unused
-}
-
-//-----------------------------------------------------------------------------
-
-size_t bwt_map_exact_seeds_seq_by_num_bs(char *seq, size_t num_seeds, 
-					 size_t seed_size, size_t min_seed_size,
-					 bwt_optarg_t *bwt_optarg, bwt_index_t *index,
-					 array_list_t *mapping_list) {
-  return 0; // Unused
-}
-
-//-----------------------------------------------------------------------------
-
-// BEGIN: Mariano / Ricardo
-// Acción:Sustituir
-size_t bwt_generate_cals_bs(char *seq, char *seq2, size_t seed_size, size_t _min_cal_size, bwt_optarg_t *bwt_optarg, 
-			    bwt_index_t *index, bwt_index_t *index2, array_list_t *cal_list) {
-// END: Mariano / Ricardo
-  return 0; // Unused
-}
 
 //-----------------------------------------------------------------------------
 

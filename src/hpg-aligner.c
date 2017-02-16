@@ -41,7 +41,7 @@ size_t TOTAL_READS_SEEDING;
 struct timeval time_start_alig, time_end_alig;
 struct timeval total_time_start, total_time_end;
 float total_time = 0.0f;
-double time_alig;
+double time_alig = 0.0;
 
 size_t w2_r = 0;
 size_t w3_r = 0;
@@ -200,7 +200,7 @@ int main(int argc, char* argv[]) {
   }
 
   struct timeval time_genome_s, time_genome_e;
-  double time_genome;
+  double time_genome = 0.0;
 
   metaexons_t *metaexons;
   genome_t *genome, *genome1, *genome2;

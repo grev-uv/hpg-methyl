@@ -342,12 +342,10 @@ typedef struct mapping_batch {
 
   array_list_t *bs_status;
   bs_context_t *bs_context;
-  //  bs_context_t bs_context;
 } mapping_batch_t;
 
-mapping_batch_t *mapping_batch_new_2(size_t num_reads, array_list_t *fq_batch, pair_mng_t *pair_mng);
 mapping_batch_t *mapping_batch_new(array_list_t *fq_batch, pair_mng_t *pair_mng);
-mapping_batch_t *mapping_batch_new_by_num(size_t num_reads, pair_mng_t *pair_mng);
+
 void mapping_batch_free(mapping_batch_t *p);
 
 //=====================================================================================
@@ -415,73 +413,6 @@ void batch_free(batch_t *b);
 
 //======================================================================================
 
-typedef struct buffer_item {
-  fastq_read_t *read;
-  array_list_t *items_list;
-  void *aux_data;
-} buffer_item_t;
-
-buffer_item_t *buffer_item_complete_new(fastq_read_t *read, array_list_t *cals_list, void *aux_data);
-void buffer_item_insert_new_item(fastq_read_t *fq_read,
-                                 linked_list_t *items_list,
-                                 void *data,
-                                 int type_items,
-                                 linked_list_t *buffer,
-                                 linked_list_t *buffer_hc,
-                                 int phase);
-void buffer_item_free(buffer_item_t *buffer_item);
-
-void insert_file_item(fastq_read_t *fq_read, array_list_t *items, FILE *f_sa);
-
-void insert_file_item_2(fastq_read_t *fq_read, array_list_t *items, FILE *f_hc);
-//======================================================================================
-
-
-typedef struct meta_alignment {
-  int status;
-  int sp_sw;
-  int num_cigars;
-  int type;
-  int type_cigars[10];
-  int score;
-  float f_score;
-  int flag;
-  array_list_t *cals_list;
-  cigar_code_t *middle_cigars[10];
-  cigar_code_t *cigar_left;
-  cigar_code_t *cigar_right;
-  cigar_code_t *cigar_code;
-} meta_alignment_t;
-
-typedef struct simple_alignment {
-  int gap_start;
-  int gap_end;
-  int map_strand;
-  int map_chromosome;
-  size_t map_start;
-  int map_distance;
-  int cigar_len;
-} simple_alignment_t;
-
-typedef struct alignment_aux {
-  int mapping_len;
-  short int optional_fields_length;
-  short int chromosome;
-  int position;
-  int map_quality;
-  int num_cigar_operations;
-  unsigned char seq_strand;	
-  int cigar_len;
-} alignment_aux_t;
-
-
-void alignment_aux_init(alignment_t* alignment, alignment_aux_t *alignment_aux);
-
-
-cal_t *convert_bwt_anchor_to_CAL(bwt_anchor_t *bwt_anchor, 
-				 size_t read_start, size_t read_end);
-
-void file_write_items(fastq_read_t *fq_read, array_list_t *items, 
-		      unsigned char data_type, FILE *fd1, FILE *fd2, int mode);
+cal_t *convert_bwt_anchor_to_CAL(bwt_anchor_t *bwt_anchor, size_t read_start, size_t read_end);
 
 #endif // BUFFERS_H

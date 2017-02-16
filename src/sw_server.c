@@ -688,8 +688,8 @@ void apply_sw_bs_4nt(sw_server_input_t* input, batch_t *batch) {
           match_seq = (char *) malloc((match_len + 1)* sizeof(char));
           memcpy(match_seq, &read->sequence[match_start], match_len);
           match_seq[match_len] = 0;
-          
-          match_qual = (char *) malloc((match_len + 1)* sizeof(char));
+
+          match_qual = (char *) calloc(match_len + 1, sizeof(char));
           memcpy(match_qual, &read->quality[match_start], match_len);
           match_qual[match_len] = 0;
         

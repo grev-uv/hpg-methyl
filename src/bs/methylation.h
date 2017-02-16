@@ -5,6 +5,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 
 #include "commons/commons.h"
 #include "commons/system_utils.h"
@@ -52,6 +53,11 @@ typedef struct metil_file {
   FILE *CHH;                             /**< File pointer to CHH output.           */
   FILE *MUT;                             /**< File pointer to Mutation output.      */
   FILE *STAT;                            /**< File pointer to Statistics output.    */
+
+  size_t skip_cpg;        /**< Skip flag for CpG regions. If set, the file is skipped for the remaining batches */
+  size_t skip_chg;        /**< Skip flag for CHG regions. If set, the file is skipped for the remaining batches */
+  size_t skip_chh;        /**< Skip flag for CHH regions. If set, the file is skipped for the remaining batches */
+  size_t skip_mut;        /**< Skip flag for MUT regions. If set, the file is skipped for the remaining batches */
 
   hash_table_t *table_isles;             /**< Structure with the hash table values  */
 
