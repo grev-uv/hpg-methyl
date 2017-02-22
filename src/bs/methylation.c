@@ -68,7 +68,7 @@ void rev_comp(char *orig, char *dest, int len) {
     dest[len - i - 1] = complement(orig[i]);
   }
 
-  dest[len] = '\0';
+  dest[len - 1] = '\0';
 }
 
 //------------------------------------------------------------------------------------
@@ -190,7 +190,7 @@ char *obtain_seq(alignment_t *alig, fastq_read_t * orig) {
     }
   }
 
-  seq[pos] = '\0';
+  seq[seq_len - 1] = '\0';
 
   free(cigar);
   return seq;
