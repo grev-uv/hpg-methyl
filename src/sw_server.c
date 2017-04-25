@@ -620,13 +620,8 @@ void apply_sw_bs_4nt(sw_server_input_t* input, batch_t *batch) {
 
   alignment_t *alignment;
   array_list_t *alignment_list;
-
-  // Kept for legacy reasons, using the tag object list now
-  // Should be refactored in the future
-  char *optional_fields = NULL;
-  int optional_fields_length = 100;
-
   array_list_t **mapping_lists;
+
   size_t num_targets;
   size_t *targets;
 
@@ -706,14 +701,14 @@ void apply_sw_bs_4nt(sw_server_input_t* input, batch_t *batch) {
                   strdup(new_cigar_code_string(cigar_code)), 
                   cigar_code_get_num_ops(cigar_code), 
                   norm_score * 254, 1, (num_cals > 1),
-                  optional_fields_length, optional_fields, alignment);
+                  0, NULL, alignment);
           
-          // set optional fields
+          // Set optional fields
           bam_tag_t* as_tag = bam_tag_init(AS_TAG_NAME, BAM_TAG_TYPE_INT, 0, 0);
           bam_tag_t* nh_tag = bam_tag_init(NH_TAG_NAME, BAM_TAG_TYPE_INT, 0, 0);
           bam_tag_t* nm_tag = bam_tag_init(NM_TAG_NAME, BAM_TAG_TYPE_INT, 0, 0);
 
-          bam_int_t AS = (bam_int_t) norm_score * 100;
+          bam_int_t AS = (bam_int_t) (norm_score * 100.0);
           bam_int_t NH = num_cals;
           bam_int_t NM = cigar_code->distance;
 

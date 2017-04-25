@@ -199,8 +199,9 @@ interval_t* __bwt_map_inexact_read_bs_new(fastq_read_t *read,
   size_t len = end_read - start_read + 1;
   size_t len_calc = len;
 
-  //Only a entire read can be mapped, if not the read will be included in an anchor
+  // Only a entire read can be mapped, if not the read will be included in an anchor
   bool mapp = true;
+
   if (len < total_read_len) {
     mapp = false;
   }
