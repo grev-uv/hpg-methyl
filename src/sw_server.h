@@ -70,6 +70,20 @@ struct sw_server_input {
 };
 
 //------------------------------------------------------------------------------------
+
+typedef struct apply_sw_bs_stage_workspace {
+  sw_optarg_t sw_optarg1;
+  sw_optarg_t sw_optarg2;
+  int sw_optarg_is_set;
+
+  array_list_t *fill_gaps_sw_prepare_list1;
+  array_list_t *fill_gaps_sw_prepare_list2;
+
+  array_list_t *fill_end_gaps_sw_prepare_list1;
+  array_list_t *fill_end_gaps_sw_prepare_list2;
+} apply_sw_bs_stage_workspace_t;
+
+//------------------------------------------------------------------------------------
 void sw_optarg_init(float gap_open, float gap_extend, 
 		    float match, float mismatch, sw_optarg_t *sw_optarg);
 
@@ -168,11 +182,21 @@ sw_output_t *sw_output_new(int strand, size_t chrom, size_t ref_start, size_t re
 
 //--------------------------------------------------------------------------------------
 
-int apply_sw_bs(sw_server_input_t* input, batch_t *batch);
-void apply_sw_bs_4nt(sw_server_input_t* input, batch_t *batch);
-void apply_sw_bs_3nt(sw_server_input_t* input, batch_t *batch);
-
+int apply_sw_bs(sw_server_input_t* input, batch_t *batch, apply_sw_bs_stage_workspace_t *workspace);
+void clean_apply_sw_stage_workspace(void* workspace);
+void apply_sw_bs_4nt(sw_server_input_t* input, batch_t *batch, apply_sw_bs_stage_workspace_t *workspace);
 void fill_matrix(subst_matrix_t subst_matrix, float match, float mismatch, int type, float factor_match, float factor_mismatch);
+
+void fill_gaps_bs(mapping_batch_t *mapping_batch, sw_optarg_t *sw_optarg, 
+		  genome_t *genome1, genome_t *genome2, int min_gap, int min_distance,
+		  int bs_id, sw_optarg_t *sw_optarg1, sw_optarg_t *sw_optarg2,
+      apply_sw_bs_stage_workspace_t *workspace);
+
+void merge_seed_regions_bs(mapping_batch_t *mapping_batch, int bs_id);
+
+void fill_end_gaps_bs(mapping_batch_t *mapping_batch, sw_optarg_t *sw_optarg, 
+		      genome_t *genome1, genome_t *genome2, int min_H, int min_distance,
+		      int bs_id, apply_sw_bs_stage_workspace_t *workspace);
 
 //--------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------

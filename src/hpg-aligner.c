@@ -67,7 +67,6 @@ int main(int argc, char* argv[]) {
 
   TOTAL_READS_SEEDING = 0;
   
-  const char HEADER_FILE[1024] = "Human_NCBI37.hbam\0";
   basic_st = basic_statistics_new();
 
   // Init logs, after parsing the command-line
@@ -130,7 +129,6 @@ int main(int argc, char* argv[]) {
       run_index_builder(options->genome_filename, options->bwt_dirname, options->index_ratio);
 
       // Generate binary code for original genome
-      char binary_filename[strlen(options->bwt_dirname) + 128];
       char bs_dir1[256];
       sprintf(bs_dir1, "%s/AGT_index", options->bwt_dirname);
       create_directory(bs_dir1);
@@ -199,12 +197,11 @@ int main(int argc, char* argv[]) {
     start_timer(total_time_start);
   }
 
-  struct timeval time_genome_s, time_genome_e;
+  struct timeval time_genome_s;
   double time_genome = 0.0;
 
-  metaexons_t *metaexons;
   genome_t *genome, *genome1, *genome2;
-  bwt_index_t *bwt_index, *bwt_index1, *bwt_index2;
+  bwt_index_t *bwt_index1, *bwt_index2;
 
   start_timer(time_genome_s);
 

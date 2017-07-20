@@ -35,6 +35,9 @@ struct cal_seeker_input {
   genome_t *genome2;             /**< second genome for bisulfite */
 };
 
+typedef struct caling_bs_stage_workspace {
+} caling_bs_stage_workspace_t;
+
 /**
  * @brief  Initializer for the @a cal_seeker_input_t structure.
  * @param  region_list_p list for read batches with all regions found for each read
@@ -141,18 +144,9 @@ static inline void sw_prepare_free(sw_prepare_t *p) {
 // apply_caling
 //====================================================================================
 
-int apply_caling_bs(cal_seeker_input_t* input, batch_t *batch);
+int apply_caling_bs(cal_seeker_input_t* input, batch_t *batch, caling_bs_stage_workspace_t *workspace);
+void clean_apply_caling_bs_stage_workspace(void* workspace);
 
 //--------------------------------------------------------------------------------------
-
-void fill_gaps_bs(mapping_batch_t *mapping_batch, sw_optarg_t *sw_optarg, 
-		  genome_t *genome1, genome_t *genome2, int min_gap, int min_distance,
-		  int bs_id, sw_optarg_t *sw_optarg1, sw_optarg_t *sw_optarg2);
-
-void merge_seed_regions_bs(mapping_batch_t *mapping_batch, int bs_id);
-
-void fill_end_gaps_bs(mapping_batch_t *mapping_batch, sw_optarg_t *sw_optarg, 
-		      genome_t *genome1, genome_t *genome2, int min_H, int min_distance,
-		      int bs_id);
 
 #endif  // CAL_SEEKER_H

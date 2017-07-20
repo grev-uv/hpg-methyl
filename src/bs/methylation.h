@@ -23,7 +23,6 @@
 #include "pair_server.h"
 
 #include "hash_table.h"
-#include "array_list_bs.h"
 
 #include "bioformats/bam/bam_tags.h"
 #include "bwt_server.h"
@@ -35,6 +34,17 @@
 #define AGT  1
 #define ACT  2
 #define AT   3
+
+
+typedef struct metil_data {
+  char*  query_name;
+  char   status;
+  int    chromosome;
+  size_t start;
+  char   context;
+  int    strand;
+  int    zone;
+} metil_data_t;
 
 
 //====================================================================================
@@ -75,6 +85,12 @@ typedef struct metil_file {
 } metil_file_t;
 
 //====================================================================================
+
+typedef struct methylation_stage_workspace {
+  char* add_status_seq;
+  char* add_status_gen;
+  char* add_status_seq_dup;
+} methylation_stage_workspace_t;
 
 /**
  * @brief  Initialization of the metilation structure.
@@ -195,7 +211,8 @@ void revert_mappings_seqs(array_list_t **src1, array_list_t **src2, array_list_t
  *                                                                                                                         
  *                                                                                                                         
  */
-int methylation_status_report(sw_server_input_t* input, batch_t *batch);
+int methylation_status_report(sw_server_input_t* input, batch_t *batch, methylation_stage_workspace_t *workspace);
+void clean_methylation_stage_workspace(void *workspace);
 
 //====================================================================================                                     
 
@@ -207,7 +224,9 @@ int methylation_status_report(sw_server_input_t* input, batch_t *batch);
  *                                                                                                                         
  */
 //void add_metilation_status(array_list_t *array_list, array_list_t *list, bs_context_t *bs_context, genome_t * genome, array_list_t * orig_seq, size_t index, int conversion);
-void add_metilation_status(array_list_t *array_list, bs_context_t *bs_context, genome_t * genome, array_list_t * orig_seq, size_t index, int conversion);
+void add_metilation_status(array_list_t *array_list, bs_context_t *bs_context, 
+        genome_t * genome, array_list_t * orig_seq, size_t index, int conversion,
+        methylation_stage_workspace_t *workspace);
 
 //====================================================================================                                     
 

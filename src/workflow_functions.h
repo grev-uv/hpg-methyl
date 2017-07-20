@@ -32,22 +32,23 @@ void *fastq_reader(void *input);
 //--------------------------------------------------------------------
 
 // Burrows-Wheeler Transform
-int bwt_stage_bs(void *data);
+int bwt_stage_bs(work_item_t *item, int thread_id);
 
 // Candidate Alignment Location
-int cal_stage_bs(void *data);
+int cal_stage_bs(work_item_t *item, int thread_id);
 
 // Pre-pair
-int pre_pair_stage(void *data);
+int pre_pair_stage(work_item_t *item, int thread_id);
 
 // Smith-Waterman Algorithm
-int sw_stage_bs(void *data);
+int sw_stage_bs(work_item_t *item, int thread_id);
 
 // Post pair
-int post_pair_stage_bs(void *data);
+int post_pair_stage_bs(work_item_t *item, int thread_id);
 
 // Methylation status
-int bs_status_stage(void *data);
+int bs_status_stage(work_item_t *item, int thread_id);
+
 
 //---------------------------------------------------------------------
 // Workflow input

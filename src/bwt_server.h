@@ -57,6 +57,7 @@ void bwt_server_input_init(list_t* read_list_p, unsigned int batch_size, bwt_opt
 // apply_bwt
 //====================================================================================
 
-int apply_bwt_bs(bwt_server_input_t* input, batch_t *batch_p);
+int apply_bwt_bs(bwt_server_input_t* input, batch_t *batch_p, bwt_stage_bs_workspace_t *workspace);
+void clean_bwt_stage_bs_workspace(void *workspace);
 
 #endif  // BW_SERVER_H

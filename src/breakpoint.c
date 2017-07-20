@@ -35,7 +35,6 @@ cigar_code_t *cigar_code_new() {
 cigar_code_t *cigar_code_new_by_string(char *cigar_str) {
   cigar_code_t *p = cigar_code_new();
   int cigar_len = strlen(cigar_str);
-  int cigar_op_counter = 0;
   int c = 0;
   char op;
   char op_value[1024];
@@ -275,7 +274,6 @@ cigar_code_t *generate_cigar_code(char *query_map, char *ref_map, unsigned int m
   unsigned char status;
   unsigned char transition;
   char operation;
-  char operation_number[map_len * 2];
 
 
   if (query_start > 0) {

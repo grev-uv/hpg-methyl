@@ -62,17 +62,11 @@ cal_t *convert_bwt_anchor_to_CAL(bwt_anchor_t *bwt_anchor, size_t read_start, si
 
 size_t bwt_search_pair_anchors(array_list_t *list, unsigned int read_length, size_t min_cal_size, double umbral_cal_length_factor, int min_read_discard) {
   bwt_anchor_t *bwt_anchor;
-  bwt_anchor_t *max_anchor = NULL;
-  bwt_anchor_t *bwt_anchor_back, *bwt_anchor_forw;
 
-	int max_double_anchor = 0, max_anchor_length = 0;
-  int anchor_length_tmp, anchor_back, anchor_forw;
-  int strand, type;
+  int anchor_length_tmp;
   int found_anchor = 0, found_double_anchor = 0;
-	int seed_size, gap_read, gap_genome;
   int MAX_BWT_REGIONS = array_list_size(list);
 
-  array_list_t *anchor_list_tmp, *forward_anchor_list, *backward_anchor_list;
   cal_t *cal;
 
   if (MAX_BWT_REGIONS > MAX_NUM_ANCHOR) {
@@ -124,8 +118,6 @@ size_t bwt_search_pair_anchors(array_list_t *list, unsigned int read_length, siz
 
     	anchor_length_tmp = bwt_anchor->end - bwt_anchor->start + 1;
     	found_anchor = 1;
-			strand = bwt_anchor->strand;
-			type = bwt_anchor->type;
 
 			if (read_length - anchor_length_tmp < MAX_BIG_ANCHOR_SIZE) { //16 --> 20
     		array_list_insert(bwt_anchor, big_anchor_list);
@@ -203,23 +195,16 @@ size_t bwt_search_pair_anchors(array_list_t *list, unsigned int read_length, siz
 		}
 
 	 	// Store CALs in Array List for return results
-	  size_t start_cal, end_cal;
-	  size_t seq_start, seq_end;
-	  seed_region_t *s, *s_first, *s_last, *s_aux, *seed_region;
+	  seed_region_t *s;
 	  cal_t *cal;
-	  short_cal_t *short_cal, *short_cal_aux;
-	  linked_list_iterator_t itr, itr2, itr3;
-	  linked_list_item_t *list_item_cal, *list_item_aux;
+	  short_cal_t *short_cal;
+	  linked_list_iterator_t itr, itr3;
+	  linked_list_item_t *list_item_cal;
 
-	  int best_cal_num_seeds = 0;
 	  int best_cal_length = 0;
-	  int actual_cal_length = 0;
-	  int cals_added = 0;
 
 	  // Cal is accepted like candidate if they are the largest cal mapped or if it has been mapped more than umbral_cal_length
 	  int umbral_cal_length = read_length / umbral_cal_length_factor;		//2
-
-	  const int max_intron_size = 500000; //TODO: Parameter
 	 
 	  for (unsigned int jj = 0; jj < nchromosomes; jj++) {
 	    for (unsigned int ii = 0; ii < nstrands; ii++) {
@@ -235,7 +220,7 @@ size_t bwt_search_pair_anchors(array_list_t *list, unsigned int read_length, siz
  	      	
 					while (s != NULL) {
  	    	  	actual_cal_length += (s->genome_end - s->genome_start);
-		  	  	s =  	     	      linked_list_iterator_next(&itr3);
+		  	  	s = linked_list_iterator_next(&itr3);
  	      	}
 
  	      	if ((actual_cal_length >= best_cal_length) || (actual_cal_length >= umbral_cal_length)) {
@@ -313,9 +298,49 @@ size_t bwt_search_pair_anchors(array_list_t *list, unsigned int read_length, siz
 // BS - Burrows-Wheeler Transform
 //====================================================================================
 
-int apply_bwt_bs(bwt_server_input_t* input, batch_t *batch) {
-  LOG_DEBUG("========= APPLY BWT BS START =========\n");
+void clean_bwt_stage_bs_workspace(void *workspace) {
+	if (workspace) {
+		bwt_stage_bs_workspace_t *wf = (bwt_stage_bs_workspace_t*)workspace;
 
+		if (wf->map_inexact_read_code_seq) {
+			free(wf->map_inexact_read_code_seq);
+		}
+
+		if (wf->map_inexact_read_seq_dup) {
+			free(wf->map_inexact_read_seq_dup);
+		}
+
+		if (wf->map_inexact_read_quality_clipping) {
+			free(wf->map_inexact_read_quality_clipping);
+		}
+
+		if (wf->map_inexact_read_k1) {
+			free(wf->map_inexact_read_k1);
+		}
+
+		if (wf->map_inexact_read_l1) {
+			free(wf->map_inexact_read_l1);
+		}
+
+		if (wf->map_inexact_read_ki1) {
+			free(wf->map_inexact_read_ki1);
+		}
+
+		if (wf->map_inexact_read_li1) {
+			free(wf->map_inexact_read_li1);
+		}
+
+		if (wf->map_inexact_read_tmp_mapping_list) {
+			array_list_free(wf->map_inexact_read_tmp_mapping_list, alignment_free);
+		}
+
+		free(wf);
+	}
+}
+
+//====================================================================================
+
+int apply_bwt_bs(bwt_server_input_t* input, batch_t *batch, bwt_stage_bs_workspace_t *workspace) {
 	mapping_batch_t *mapping_batch = batch->mapping_batch;
   struct timeval start, end;
   double time, total_time;
@@ -341,10 +366,6 @@ int apply_bwt_bs(bwt_server_input_t* input, batch_t *batch) {
 			 mapping_batch->GA_fq_batch, mapping_batch->GA_rev_fq_batch);
 
 	// Make the four searches
-  alignment_t *alignment;
-  size_t header_len;
-
-  size_t num_threads = input->bwt_optarg_p->num_threads;
   num_reads = array_list_size(mapping_batch->fq_batch);
 
   fastq_read_t* fq_read;
@@ -359,9 +380,8 @@ int apply_bwt_bs(bwt_server_input_t* input, batch_t *batch) {
 
   for (size_t i = 0; i < num_reads; i++) {
     // Obtain histogram of each read to filter the number of searches realized
-    LOG_DEBUG_F("========= OBTAIN HISTOGRAM OF READ %lu =========\n", i);
-
     fq_read = (fastq_read_t *) array_list_get(i, mapping_batch->fq_batch);
+		
 		if (time_on) {
 			start_timer(histTimeStart);
 		}
@@ -385,7 +405,9 @@ int apply_bwt_bs(bwt_server_input_t* input, batch_t *batch) {
 
     int readStart = 0;
     int readEnd = 0; //399
-    interval_t* interval = NULL;
+    
+		interval_t interval;
+		memset(&interval, 0, sizeof(interval_t));
 
     // If not defined min_cal_size, use one adapted to the read length
     int MIN_SINGLE_ANCHOR = 0;
@@ -433,15 +455,14 @@ int apply_bwt_bs(bwt_server_input_t* input, batch_t *batch) {
 			// BWT with interior intervals
       // - Who: Ricardo
       do {
-				interval = bwt_map_inexact_read_bs_new(fq_read,
+				bwt_map_inexact_read_bs_new(fq_read,
 							input->bwt_optarg_p, input->bwt_index2_p,
-							mapping_batch->mapping_lists[i], 1, readStart, readEnd);
+							mapping_batch->mapping_lists[i], 1, readStart, readEnd,
+							workspace, &interval);
 				
 				// TODO: Purge
-				readStart = interval->start + 1;	//Continues after the error
-				readEnd = interval->end - 1;		//Continues after the error
-
-      	free(interval);
+				readStart = interval.start + 1;	//Continues after the error
+				readEnd = interval.end - 1;		//Continues after the error
       }
       while ((mapping_batch->mapping_lists[i]->flag == BWT_BS_MATCHING_SEED) && 
 						((readEnd - readStart) > intervalUmbral));
@@ -453,13 +474,12 @@ int apply_bwt_bs(bwt_server_input_t* input, batch_t *batch) {
 				do {
 					// Next search the direct of the G->A transformation
 					fq_read = (fastq_read_t *) array_list_get(i, mapping_batch->GA_fq_batch);
-					interval = bwt_map_inexact_read_bs_new(fq_read,
-        			  input->bwt_optarg_p, input->bwt_index_p,
-							  mapping_batch->mapping_lists[i], 0, readStart, readEnd);
+					bwt_map_inexact_read_bs_new(fq_read, input->bwt_optarg_p, input->bwt_index_p,
+							  mapping_batch->mapping_lists[i], 0, readStart, readEnd, workspace,
+								&interval);
 
-					readStart = interval->start + 1;	//Continues after the error
-					readEnd = interval->end - 1;		//Continues after the error
-					free(interval);
+					readStart = interval.start + 1;	//Continues after the error
+					readEnd = interval.end - 1;		//Continues after the error
 				}
         while ((mapping_batch->mapping_lists[i]->flag == BWT_BS_MATCHING_SEED) && 
 							((readEnd - readStart) > intervalUmbral));
@@ -474,13 +494,12 @@ int apply_bwt_bs(bwt_server_input_t* input, batch_t *batch) {
       readEnd = fq_read->length - 1; //399
 
       do {
-    	  interval = bwt_map_inexact_read_bs_new(fq_read,
-			      input->bwt_optarg_p, input->bwt_index_p,
-			      mapping_batch->mapping_lists2[i], 1, readStart, readEnd);
+    	  bwt_map_inexact_read_bs_new(fq_read, input->bwt_optarg_p, 
+											input->bwt_index_p, mapping_batch->mapping_lists2[i], 1, 
+											readStart, readEnd, workspace, &interval);
 
-    	  readStart = interval->start + 1;	//Continues after the error
-    	  readEnd = interval->end - 1;		//Continues after the error
-    	  free(interval);  
+    	  readStart = interval.start + 1;	//Continues after the error
+    	  readEnd = interval.end - 1;		//Continues after the error
       } while ((mapping_batch->mapping_lists2[i]->flag == BWT_BS_MATCHING_SEED) && 
 							((readEnd - readStart) > intervalUmbral));
 
@@ -491,13 +510,12 @@ int apply_bwt_bs(bwt_server_input_t* input, batch_t *batch) {
     	  do {
     		  // Next search the direct of the C->T transformation
     		  fq_read = (fastq_read_t *) array_list_get(i, mapping_batch->CT_fq_batch);
-    		  interval = bwt_map_inexact_read_bs_new(fq_read,
-    				 		 							input->bwt_optarg_p, input->bwt_index2_p,
-					  									mapping_batch->mapping_lists2[i], 0, readStart, readEnd);
+    		  bwt_map_inexact_read_bs_new(fq_read, input->bwt_optarg_p, 
+													input->bwt_index2_p, mapping_batch->mapping_lists2[i], 
+													0, readStart, readEnd, workspace, &interval);
     		  
-    		  readStart = interval->start + 1;	//Continues after the error
-    		  readEnd = interval->end - 1;		//Continues after the error
-    		  free(interval);
+    		  readStart = interval.start + 1;	//Continues after the error
+    		  readEnd = interval.end - 1;		//Continues after the error
 				} while ((mapping_batch->mapping_lists2[i]->flag == BWT_BS_MATCHING_SEED) && 
 								((readEnd - readStart) > intervalUmbral));
       }

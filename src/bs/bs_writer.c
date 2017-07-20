@@ -14,7 +14,6 @@ int bs_writer(void *data) {
   
   batch_t *batch = (batch_t *) data;
   fastq_read_t *fq_read;
-  array_list_t *array_list;
   size_t num_items;
   
   mapping_batch_t *mapping_batch = (mapping_batch_t *) batch->mapping_batch;
@@ -25,17 +24,10 @@ int bs_writer(void *data) {
   
   batch_writer_input_t *writer_input = batch->writer_input;
   bam_file_t *bam_file = writer_input->bam_file;     
-  linked_list_t *linked_list = writer_input->list_p;
   size_t num_reads = array_list_size(mapping_batch->fq_batch);
   size_t num_mapped_reads = 0;
   size_t total_mappings = 0;
-  unsigned char found_p1 = 0;
-  unsigned char found_p2 = 0;
-  int i = 0;
   
-  extern size_t bwt_correct;
-  extern size_t bwt_error;
-  extern pthread_mutex_t bwt_mutex;
   
   writer_input->total_batches++;
   
@@ -43,8 +35,6 @@ int bs_writer(void *data) {
   int *found = (int *) calloc(num_reads, sizeof(int));
   metil_file_t *metil_file = writer_input->metil_file;
 
-  array_list_t *bs_stat = mapping_batch->bs_status;
-  char *bs_seq;
   size_t num_chromosomes = batch->bwt_input->genome->num_chromosomes;
 
   // Process mapping_lists and mapping_lists2
@@ -86,7 +76,7 @@ int bs_writer(void *data) {
   
   if (basic_st->total_reads >= writer_input->limit_print) {
     LOG_DEBUG_F("TOTAL READS PROCESS: %lu\n", basic_st->total_reads);
-    LOG_DEBUG_F("\tTotal Reads Mapped: %lu(%.2f%)\n", 
+    LOG_DEBUG_F("\tTotal Reads Mapped: %lu(%.2f%%)\n", 
 		basic_st->num_mapped_reads, 
 		(float) (basic_st->num_mapped_reads*100)/(float)(basic_st->total_reads));
     writer_input->limit_print += 1000000;
@@ -110,6 +100,8 @@ int bs_writer(void *data) {
     stop_timer(start, end, time); 
     timing_add(time, BAM_WRITER, timing); 
   }
+
+  return 0;
 }
 
 //--------------------------------------------------------------------
@@ -148,7 +140,7 @@ void write_unmapped_read(fastq_read_t *fq_read, bam_file_t *bam_file) {
   bam1_t *bam1;
 
   // Calculating cigar
-  sprintf(aux, "%luX", fq_read->length);
+  sprintf(aux, "%iX", fq_read->length);
 
   alig = alignment_new();
   header_len = strlen(fq_read->id);

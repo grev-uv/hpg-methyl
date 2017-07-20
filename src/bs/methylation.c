@@ -341,7 +341,29 @@ void remove_duplicates(size_t reads, array_list_t **list, array_list_t **list2) 
 
 //------------------------------------------------------------------------------------
 
-int methylation_status_report(sw_server_input_t* input, batch_t *batch) {
+void clean_methylation_stage_workspace(void *workspace) {
+  if (workspace) {
+    methylation_stage_workspace_t* wf = workspace;
+
+    if (wf->add_status_seq) {
+      free(wf->add_status_seq);
+    }
+
+    if (wf->add_status_gen) {
+      free(wf->add_status_gen);
+    }
+
+    if (wf->add_status_seq_dup) {
+      free(wf->add_status_seq_dup);
+    }
+
+    free(wf);
+  }
+}
+
+//------------------------------------------------------------------------------------
+
+int methylation_status_report(sw_server_input_t* input, batch_t *batch, methylation_stage_workspace_t *workspace) {
 
   LOG_DEBUG("========= METHYLATION STATUS REPORT START =========\n");
 
@@ -350,7 +372,6 @@ int methylation_status_report(sw_server_input_t* input, batch_t *batch) {
   size_t num_items;
   size_t num_reads = array_list_size(mapping_batch->fq_batch);
   genome_t *genome = input->genome_p;
-  fastq_read_t *orig;
 
   struct timeval methylation_time_start, methylation_time_end;
   float methylation_time = 0.0f;
@@ -373,7 +394,7 @@ int methylation_status_report(sw_server_input_t* input, batch_t *batch) {
       
       // Mapped or not mapped ?
       if (num_items != 0) {
-	      add_metilation_status(mapping_lists[i], bs_context, genome, mapping_batch->fq_batch, i, k);
+	      add_metilation_status(mapping_lists[i], bs_context, genome, mapping_batch->fq_batch, i, k, workspace);
       }
     }
   }
@@ -388,7 +409,9 @@ int methylation_status_report(sw_server_input_t* input, batch_t *batch) {
 
 //------------------------------------------------------------------------------------
 
-void add_metilation_status(array_list_t *array_list, bs_context_t *bs_context, genome_t * genome, array_list_t * orig_seq, size_t index, int conversion) {
+void add_metilation_status(array_list_t *array_list, bs_context_t *bs_context, 
+    genome_t * genome, array_list_t * orig_seq, size_t index, int conversion,
+    methylation_stage_workspace_t *workspace) {
   size_t num_items = array_list_size(array_list);
   size_t len, end, start;
 
@@ -397,10 +420,8 @@ void add_metilation_status(array_list_t *array_list, bs_context_t *bs_context, g
 
   alignment_t *alig;
   fastq_read_t *orig;
-  metil_data_t *metil_data;
 
   char *seq, *gen;
-  char *new_stage;
   
   int new_strand;
   int write_file = 1;
@@ -414,14 +435,24 @@ void add_metilation_status(array_list_t *array_list, bs_context_t *bs_context, g
       seq = obtain_seq(alig, orig);
 
       if (alig->seq_strand == 1) {
-        char *seq_dup = strdup(seq);
+        if (workspace->add_status_seq_dup == NULL) {
+          workspace->add_status_seq_dup = strdup(seq);
+        } else {
+          strcpy(workspace->add_status_seq_dup, seq);
+        }
+
+        char *seq_dup = workspace->add_status_seq_dup;
         rev_comp(seq_dup, seq, orig->length);
-        free(seq_dup);
       }
 
       // Increase the counter number of bases
       len = orig->length;
-      gen = (char *)calloc(len + 6, sizeof(char));
+
+      if (workspace->add_status_gen == NULL) {
+        workspace->add_status_gen = calloc(len + 6, sizeof(char));
+      }
+
+      gen = workspace->add_status_gen;
 
       start = alig->position + 1;
       end = start + len + 4;
@@ -665,14 +696,6 @@ void add_metilation_status(array_list_t *array_list, bs_context_t *bs_context, g
         }
       }
 
-      if (seq) {
-        free(seq);
-      }
-
-      if (gen) {
-        free(gen);
-      }
-
       // Set the number of methylated C's to the ZM tag
       bam_tag_set_scalar(tag_zm, &num_methyl);
 
@@ -699,8 +722,7 @@ void write_bs_context(metil_file_t *metil_file, bs_context_t *bs_context, size_t
   array_list_t *context_CHH = bs_context->context_CHH;
   array_list_t *context_MUT = bs_context->context_MUT;
 
-  size_t num_items, num_reads;
-  char *bs_seq;
+  size_t num_items;
   int file_error;
   metil_data_t *metil_data;
 

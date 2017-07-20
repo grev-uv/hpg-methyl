@@ -44,8 +44,7 @@ void *fastq_reader(void *input) {
   if (fq_reader_input->flags == SINGLE_END_MODE) {
     fastq_fread_bytes_se(reads, fq_reader_input->batch_size, fq_reader_input->fq_file1);
   } else {
-    fastq_fread_bytes_aligner_pe(reads, fq_reader_input->batch_size, 
-    fq_reader_input->fq_file1, fq_reader_input->fq_file2);
+    fastq_fread_bytes_aligner_pe(reads, fq_reader_input->batch_size, fq_reader_input->fq_file1, fq_reader_input->fq_file2);
   }
 
   size_t num_reads = array_list_size(reads);
@@ -72,42 +71,90 @@ void *fastq_reader(void *input) {
 // stage functions
 //--------------------------------------------------------------------
 
-int bwt_stage_bs(void *data) {
-  batch_t *batch = (batch_t *) data;
-  return apply_bwt_bs(batch->bwt_input, batch);
+int bwt_stage_bs(work_item_t *item, int thread_id) {
+  work_item_t *wf = (work_item_t*)item;
+
+  batch_t *batch = wf->data;
+  workflow_t *workflow = (workflow_t*)wf->context;
+
+  if (workflow->thread_workspace[thread_id][BS_BWT_STAGE] == NULL) {
+    workflow->thread_workspace[thread_id][BS_BWT_STAGE] = calloc(1, sizeof(bwt_stage_bs_workspace_t));
+  }
+
+  return apply_bwt_bs(batch->bwt_input, batch, workflow->thread_workspace[thread_id][BS_BWT_STAGE]);
 }
 
 //--------------------------------------------------------------------
 
-int cal_stage_bs(void *data) {
-  batch_t *batch = (batch_t *) data;
-  return apply_caling_bs(batch->cal_input, batch);
+int cal_stage_bs(work_item_t *item, int thread_id) {
+  work_item_t *wf = (work_item_t*)item;
+
+  batch_t *batch = wf->data;
+  workflow_t *workflow = (workflow_t*)wf->context;
+
+  if (workflow->thread_workspace[thread_id][BS_CAL_STAGE] == NULL) {
+    workflow->thread_workspace[thread_id][BS_CAL_STAGE] = calloc(1, sizeof(caling_bs_stage_workspace_t));
+  }
+
+  return apply_caling_bs(batch->cal_input, batch, workflow->thread_workspace[thread_id][BS_CAL_STAGE]);
 }
 
 //---------------------------------------------------------------------
 
-int pre_pair_stage(void *data) {
-  batch_t *batch = (batch_t *) data;
-  return apply_pair(batch->pair_input, batch);
+int pre_pair_stage(work_item_t *item, int thread_id) {
+  work_item_t *wf = (work_item_t*)item;
+
+  batch_t *batch = wf->data;
+  workflow_t *workflow = (workflow_t*)wf->context;
+
+  if (workflow->thread_workspace[thread_id][BS_PRE_PAIR_STAGE] == NULL) {
+    workflow->thread_workspace[thread_id][BS_PRE_PAIR_STAGE] = calloc(1, sizeof(apply_pair_bs_stage_workspace_t));
+  }
+
+  return apply_pair(batch->pair_input, batch, workflow->thread_workspace[thread_id][BS_PRE_PAIR_STAGE]);
 }
 
 //--------------------------------------------------------------------
 
-int sw_stage_bs(void *data) {
-  batch_t *batch = (batch_t *) data;
-  return apply_sw_bs(batch->sw_input, batch);
+int sw_stage_bs(work_item_t *item, int thread_id) {
+  work_item_t *wf = (work_item_t*)item;
+
+  batch_t *batch = wf->data;
+  workflow_t *workflow = (workflow_t*)wf->context;
+
+  if (workflow->thread_workspace[thread_id][BS_SW_STAGE] == NULL) {
+    workflow->thread_workspace[thread_id][BS_SW_STAGE] = calloc(1, sizeof(apply_sw_bs_stage_workspace_t));
+  }
+
+  return apply_sw_bs(batch->sw_input, batch, workflow->thread_workspace[thread_id][BS_SW_STAGE]);
 }
 
 //--------------------------------------------------------------------
 
-int post_pair_stage_bs(void *data) {
-  batch_t *batch = (batch_t *) data;
-  return prepare_alignments_bs(batch->pair_input, batch);
+int post_pair_stage_bs(work_item_t *item, int thread_id) {
+  work_item_t *wf = (work_item_t*)item;
+
+  batch_t *batch = wf->data;
+  workflow_t *workflow = (workflow_t*)wf->context;
+
+  if (workflow->thread_workspace[thread_id][BS_POST_PAIR_STAGE] == NULL) {
+    workflow->thread_workspace[thread_id][BS_POST_PAIR_STAGE] = calloc(1, sizeof(prepare_alignments_bs_workspace_t));
+  }
+
+  return prepare_alignments_bs(batch->pair_input, batch, workflow->thread_workspace[thread_id][BS_POST_PAIR_STAGE]);
 }
 
 //--------------------------------------------------------------------
 
-int bs_status_stage(void *data) {
-  batch_t *batch = (batch_t *) data;
-  return methylation_status_report(batch->sw_input, batch);
+int bs_status_stage(work_item_t *item, int thread_id) {
+  work_item_t *wf = (work_item_t*)item;
+
+  batch_t *batch = wf->data;
+  workflow_t *workflow = (workflow_t*)wf->context;
+
+  if (workflow->thread_workspace[thread_id][BS_STATUS_STAGE] == NULL) {
+    workflow->thread_workspace[thread_id][BS_STATUS_STAGE] = calloc(1, sizeof(methylation_stage_workspace_t));
+  }
+
+  return methylation_status_report(batch->sw_input, batch, workflow->thread_workspace[thread_id][BS_STATUS_STAGE]);
 }

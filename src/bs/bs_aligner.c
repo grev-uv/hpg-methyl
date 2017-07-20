@@ -41,8 +41,8 @@ void run_bs_aligner(genome_t *genome2, genome_t *genome1, genome_t *genome,
   // Preparing input FastQ file
   fastq_batch_reader_input_t reader_input;
   fastq_batch_reader_input_init(options->in_filename, options->in_filename2, 
-				options->pair_mode, options->batch_size, 
-				NULL, &reader_input);
+				options->pair_mode, options->batch_size, NULL,
+				0, &reader_input);
   
   if (options->pair_mode == SINGLE_END_MODE) {
     reader_input.fq_file1 = fastq_fopen(options->in_filename);
@@ -102,7 +102,6 @@ void run_bs_aligner(genome_t *genome2, genome_t *genome1, genome_t *genome,
   int gen_loads = load_encode_context(options->bwt_dirname, sw_input.valuesCT, sw_input.valuesGA);
   
   // Workflow management
-  struct timeval start, end;
   
   // Added option write_mcontext, true//false in order to write metilation context files
   batch_t *batch = batch_new(&bwt_input, &region_input, &cal_input,
@@ -123,6 +122,15 @@ void run_bs_aligner(genome_t *genome2, genome_t *genome1, genome_t *genome,
     bs_status_stage
   };
 
+  workflow_stage_workspace_cleanup_function_t cleanup_functions[] = {
+    clean_bwt_stage_bs_workspace,
+    clean_apply_caling_bs_stage_workspace,
+    clean_apply_pair_stage_workspace,
+    clean_apply_sw_stage_workspace,
+    clean_prepare_alignments_bs_stage_workspace,
+    clean_methylation_stage_workspace
+  };
+
   char *stage_labels[] = {
     "BWT", 
     "CAL", 
@@ -132,11 +140,12 @@ void run_bs_aligner(genome_t *genome2, genome_t *genome1, genome_t *genome,
     "BS STATUS"
   };
 
-  workflow_set_stages(6, &stage_functions, stage_labels, wf);
+  workflow_set_stages(6, (workflow_stage_function_t*)&stage_functions, (char**)stage_labels, wf,
+                      (workflow_stage_workspace_cleanup_function_t*)&cleanup_functions);
 
   // Optional producer and consumer functions
-  workflow_set_producer(fastq_reader, "FastQ reader", wf);
-  workflow_set_consumer(bs_writer, "BAM BS writer", wf);
+  workflow_set_producer((workflow_producer_function_t)fastq_reader, "FastQ reader", wf);
+  workflow_set_consumer((workflow_consumer_function_t)bs_writer, "BAM BS writer", wf);
   
   extern double time_alig;
   extern struct timeval time_start_alig, time_end_alig;
