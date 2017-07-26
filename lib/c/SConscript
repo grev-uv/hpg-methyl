@@ -1,0 +1,27 @@
+import os
+
+Import('hpg_c_env', 'compiler', 'debug')
+
+env = hpg_c_env.Clone()
+
+c_src_path =        os.getcwd() + '/src'
+aligners_path =     os.getcwd() + '/src/aligners'
+bioformats_path =   os.getcwd() + '/src/bioformats'
+commons_path =      os.getcwd() + '/src/commons'
+containers_path =   os.getcwd() + '/src/containers'
+math_path =         os.getcwd() + '/src/math'
+
+VariantDir('build', 'src', duplicate=0)
+
+env['CPPPATH'] += ['%s' % c_src_path, '%s' % aligners_path, '%s' % bioformats_path
+        , '%s' % commons_path, '%s' % containers_path, '%s' % math_path]
+
+
+SConscript('src/aligners/SConscript', exports = ['env', 'debug', 'compiler'])
+SConscript('src/bioformats/SConscript', exports = ['env', 'debug', 'compiler'])
+SConscript('src/commons/SConscript', exports = ['env', 'debug', 'compiler'])
+SConscript('src/containers/SConscript', exports = ['env', 'debug', 'compiler'])
+SConscript('src/math/SConscript', exports = ['env', 'debug', 'compiler'])
+
+
+env.Library('build/hpg', env['objects'])

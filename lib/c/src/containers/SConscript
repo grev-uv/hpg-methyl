@@ -1,0 +1,24 @@
+import os
+
+Import('env', 'debug', 'compiler')
+
+
+#New environment for containers
+containersenv = env.Clone()
+
+# Initialize environment
+containersenv['objects'] = []
+containersenv.Decider('MD5-timestamp')
+
+
+# Targets
+containers_obj = containersenv.Object(Glob('./*.c'))
+
+# Objects
+containersenv['objects'] += containers_obj
+
+# Run tests
+containers_test = SConscript("test/SConscript", exports = ['containersenv'] )
+
+env['objects'] += containersenv['objects']
+

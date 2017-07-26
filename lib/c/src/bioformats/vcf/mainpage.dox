@@ -1,0 +1,7 @@
+/**
+@mainpage The vcf-lib API Reference
+
+As described in the 1000 Genomes Project main site, "VCF is a text file format (most likely stored in a compressed manner). It contains meta-information lines, a header line, and then data lines each containing information about a position in the genome." Although VCF is extensively used in Next Generation Sequencing contexts, the list of open source libraries that allow to interact with this kind of files is really small. Most importantly, they are not designed as a low-level API for other applications, but they are oriented to full tasks such as diff, extracting samples or sorting files.
+
+The goal of vcf-lib is to provide a collection of I/O functions for those who want to implement software that interacts with VCF files. It allows to read and write valid VCF files, both in plain text or compressed in GZIP format. In addition to this low-level functions, it also provides high-level ones for filtering and getting statistics.
+*/ 

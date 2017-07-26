@@ -1,0 +1,19 @@
+import os
+
+Import('env', 'debug', 'compiler')
+
+#New environment for commons
+commonsenv = env.Clone()
+
+# Initialize environment
+commonsenv['objects'] = []
+commonsenv.Decider('MD5-timestamp')
+
+
+# Targets
+commons_obj = commonsenv.Object(Glob('./*.c'))
+
+# Objects
+commonsenv['objects'] += commons_obj
+
+env['objects'] += commonsenv['objects']

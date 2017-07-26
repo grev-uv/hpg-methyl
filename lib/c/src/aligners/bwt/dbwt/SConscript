@@ -1,0 +1,11 @@
+Import('aligners_env', 'debug')
+
+dbwt_env = aligners_env.Clone()
+dbwt_env['objects'] = []
+		      
+dbwt_env['CFLAGS'] += ' -m64 -D_LARGEFILE64_SOURCE=1 -D_FILE_OFFSET_BITS=64 -fPIC' #-msse4.2'
+
+#dbwt_env['objects'] = dbwt_env.Object(Glob('*.c'))
+#dbwt_env.Library('dbwt', dbwt_env['objects'])
+
+aligners_env['objects'] += dbwt_env.Object(Glob('*.c'))

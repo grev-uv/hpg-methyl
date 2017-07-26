@@ -1,0 +1,6 @@
+Import('aligners_env', 'debug')
+
+penv = aligners_env.Clone()
+
+# TODO: Remove fastq_batch_reader_omp so Glob can be used
+aligners_env['objects'] += penv.Object(Split('macros.c sse.c smith_waterman.c'))

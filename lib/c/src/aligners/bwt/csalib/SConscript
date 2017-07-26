@@ -1,0 +1,10 @@
+Import('aligners_env', 'debug')
+
+csalib_env = aligners_env.Clone()
+csalib_env['objects'] = []
+		      
+csalib_env['CFLAGS'] += ' -m64 -D_LARGEFILE64_SOURCE=1 -D_FILE_OFFSET_BITS=64 -fPIC' #-msse4.2'
+
+#csalib_env['objects'] = csalib_env.Object(Glob('*.c'))
+#csalib_env.Library('csa', csalib_env['objects'])
+aligners_env['objects'] += csalib_env.Object(Glob('*.c'))

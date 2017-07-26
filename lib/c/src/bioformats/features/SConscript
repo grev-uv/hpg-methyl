@@ -1,0 +1,7 @@
+Import('formats_env')
+
+penv = formats_env.Clone()
+
+formats_env['objects'] += penv.Object(source = [Glob('region/*.c'), Glob('variant/*.c')])
+
+region_test = SConscript("region/test/SConscript", exports = ['penv'] )

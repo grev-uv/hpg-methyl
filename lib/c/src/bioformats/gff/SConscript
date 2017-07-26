@@ -1,0 +1,5 @@
+Import('formats_env')
+
+penv = formats_env.Clone()
+
+formats_env['objects'] += penv.Object(Glob('gff_*.c'))

@@ -1,0 +1,63 @@
+
+import os
+import sys
+
+Import('hpg_c_env', 'hpg_cpp_env', 'compiler', 'debug')
+
+clean = 0
+for opt in sys.argv:
+  if opt == "-c":
+     clean = 1
+
+third_party_c_objs = []
+third_party_cpp_objs = []
+hpg_c_env['CPPPATH'] += [os.getcwd()]
+hpg_cpp_env['CPPPATH'] += [os.getcwd()]
+
+# Compile argtable/ objects
+argtableenv = hpg_c_env.Clone()
+argtableenv['CFLAGS'] += ' -DHAVE_CONFIG_H -fPIC -DPIC'
+
+third_party_c_objs += argtableenv.Object(Glob('argtable/*.c'))
+
+# Compile config/ objects
+configenv = hpg_c_env.Clone()
+configenv['CFLAGS'] += ' -DHAVE_CONFIG_H -D_REENTRANT -Wall -Wshadow -Wextra -Wdeclaration-after-statement -Wno-unused-parameter'
+
+third_party_c_objs += configenv.Object(Glob('config/*.c'))
+
+
+# Compile jansson/ objects
+janssonenv = hpg_c_env.Clone()
+janssonenv['CFLAGS'] +=  ' -DHAVE_CONFIG_H -Wall -Wextra -Wdeclaration-after-statement -fPIC -DPIC'
+janssonenv['CPPPATH'] += [os.getcwd() + '/jansson']
+hpg_c_env['CPPPATH'] += [os.getcwd() + '/jansson/']
+
+third_party_c_objs += janssonenv.Object(Glob('jansson/*.c'))
+
+# Compile sqlite/ objects
+sqliteenv = hpg_c_env.Clone()
+sqliteenv['CFLAGS'] += ' -DHAVE_CONFIG_H -fPIC -DPIC'
+
+third_party_c_objs += sqliteenv.Object(Glob('sqlite/*.c'))
+third_party_cpp_objs += sqliteenv.Object(Glob('sqlite/*.c'))
+
+
+# Compile cprops/ objects but ONLY those used for our libraries
+cpropsenv = hpg_c_env.Clone()
+cpropsenv['CFLAGS'] += ' -D_REENTRANT -D_GNU_SOURCE -DHAVE_CONFIG_H '
+
+third_party_c_objs += cpropsenv.Object(['cprops/avl.c', 'cprops/collection.c', 'cprops/hashlist.c', 'cprops/hashtable.c', 'cprops/heap.c', 'cprops/linked_list.c', 'cprops/log.c', 'cprops/mempool.c', 'cprops/rb.c', 'cprops/util.c', 'cprops/vector.c', 'cprops/trie.c', 'cprops/mtab.c'])
+
+
+# we don't compile samtools and hts ourselves, delegate in their makefiles
+# that generate samtools/libbam.a and htslib/libhts.a
+if clean:
+   os.system("cd htslib/ && make clean && cd ../samtools/ && make clean")
+else:
+   os.system("cd .. && cd third_party/htslib/ && make && cd ../samtools/ && make && cd ../")
+hpg_c_env['CPPPATH'] += [os.getcwd() + '/htslib/']
+
+# return all objects
+hpg_c_env['objects'] += third_party_c_objs
+hpg_cpp_env['objects'] += third_party_cpp_objs

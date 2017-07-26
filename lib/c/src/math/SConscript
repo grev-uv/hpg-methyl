@@ -1,0 +1,18 @@
+import os
+Import('env', 'debug', 'compiler')
+
+math_env = env.Clone()
+
+math_env['LIBS'] += ['gsl']
+math_env['CPPPATH'] += [ '..', '.', 'data' ]
+
+
+# Targets
+algebra_obj = math_env.Object(Glob('algebra/*.c'))
+data_obj = math_env.Object(Glob('data/*.c'))
+stats_obj = math_env.Object(Glob('stats/*.c'))
+utils_obj = math_env.Object('math_utils.c')
+
+math_env['objects'] = algebra_obj + data_obj + stats_obj + utils_obj
+
+env['objects'] += math_env['objects']

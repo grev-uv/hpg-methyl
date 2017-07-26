@@ -1,0 +1,17 @@
+import os
+
+Import('env', 'compiler', 'debug')
+
+# Initialize environment
+formats_env = env.Clone()
+formats_env['objects'] = []
+
+
+# Targets
+formats = ['family', 'fastq', 'bam', 'gff', 'bed', 'ped', 'features', 'vcf', 'db']
+
+for dir in formats:
+    SConscript(os.path.join(dir, 'SConscript'), exports = ['env', 'formats_env', 'debug'])
+
+env['objects'] += formats_env['objects']
+
