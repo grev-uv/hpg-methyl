@@ -1,5 +1,0 @@
-Import('formats_env')
-
-#penv = env.Clone()
-
-formats_env['objects'] += formats_env.Object(Glob('*.c'))
