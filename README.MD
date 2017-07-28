@@ -12,7 +12,7 @@ This read-me file contains a short guide to get started quickly with HPG-Methyl.
 
 # Building
 
-HPG-Methyl requires a working installation of GCC 4.4+, SCons and the following packages:
+HPG-Methyl requires a working installation of GCC 4.9.2+, SCons and the following packages:
 
 | Library | Ubuntu / Debian | Red Hat / Fedora / Centos |
 |:-------:|:---------------:|:-------------------------:|
