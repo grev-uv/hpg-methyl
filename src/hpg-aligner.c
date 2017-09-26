@@ -92,7 +92,8 @@ int main(int argc, char* argv[]) {
   argc -= 1;
   argv += 1;
 
-  if (strcmp(command, "bs") != 0) {
+  if (strcmp(command, "bs") != 0 ||
+      strcmp(command, "build-index") != 0) {
     LOG_FATAL("Command unknown.\nValid commands are:\n \
     \tbs: to map BS sequences\n \
     \tbuild-index: to create the genome index.\n \

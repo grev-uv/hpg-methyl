@@ -3,21 +3,37 @@
         {
             "name": "Linux",
             "includePath": [
-              "/usr/include",
-              "/usr/lib/syslinux/com32/include",
-              "/usr/lib/gcc/x86_64-linux-gnu/4.8/include",
-              "/usr/lib/syslinux/com32/include",
-              "/usr/lib/jvm/java-8-openjdk-amd64/include",
-              "/usr/lib/jvm/java-7-openjdk-amd64/include",
-              "/usr/src/linux-headers-4.2.0-27/arch/x86/include",
-              "/usr/src/linux-headers-4.2.0-27/include",
-              "/usr/src/linux-headers-4.2.0-27-generic/arch/x86/include",
-              "/usr/src/linux-headers-4.2.0-27-generic/include"
+                "/usr/include",
+                "/usr/lib/syslinux/com32/include",
+                "/usr/lib/gcc/x86_64-linux-gnu/4.8/include",
+                "/usr/lib/syslinux/com32/include",
+                "/usr/lib/jvm/java-8-openjdk-amd64/include",
+                "/usr/lib/jvm/java-7-openjdk-amd64/include",
+                "/usr/src/linux-headers-4.2.0-27/arch/x86/include",
+                "/usr/src/linux-headers-4.2.0-27/include",
+                "/usr/src/linux-headers-4.2.0-27-generic/arch/x86/include",
+                "/usr/src/linux-headers-4.2.0-27-generic/include",
+                "${workspaceRoot}"
             ],
-            "browse" : {
-                "limitSymbolsToIncludedHeaders" : true,
-                "databaseFilename" : ""
-            }
+            "browse": {
+                "limitSymbolsToIncludedHeaders": true,
+                "databaseFilename": "",
+                "path": [
+                    "/usr/include",
+                    "/usr/lib/syslinux/com32/include",
+                    "/usr/lib/gcc/x86_64-linux-gnu/4.8/include",
+                    "/usr/lib/syslinux/com32/include",
+                    "/usr/lib/jvm/java-8-openjdk-amd64/include",
+                    "/usr/lib/jvm/java-7-openjdk-amd64/include",
+                    "/usr/src/linux-headers-4.2.0-27/arch/x86/include",
+                    "/usr/src/linux-headers-4.2.0-27/include",
+                    "/usr/src/linux-headers-4.2.0-27-generic/arch/x86/include",
+                    "/usr/src/linux-headers-4.2.0-27-generic/include",
+                    "${workspaceRoot}"
+                ]
+            },
+            "intelliSenseMode": "clang-x64"
         }
-    ]
+    ],
+    "version": 2
 }

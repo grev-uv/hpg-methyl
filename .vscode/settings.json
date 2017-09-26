@@ -16,8 +16,10 @@
     }
 ,
 "files.associations": {
-  "SConstruct": "python",
-  "*.cu": "c",
-  "*.cuh": "c"
+    "SConstruct": "python",
+    "*.cu": "c",
+    "*.cuh": "c",
+    "log.h": "c",
+    "bw_io.h": "c"
 }
 }
