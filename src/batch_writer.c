@@ -33,7 +33,7 @@ bam_header_t *create_bam_header_by_genome(genome_t *genome) {
     bam_header->text[k + 8] = tg_str[1];
   }
 
-  bam_header->text[header_tx_len - 1] = '\n';
+  //bam_header->text[header_tx_len - 1] = '\n'; //Not needed, in samtools result in a warning if is set
 
   for (int i = 0; i < num_targets; i++) {
     bam_header->target_name[i] = strdup(genome->chr_name[i]);

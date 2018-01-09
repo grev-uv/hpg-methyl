@@ -68,7 +68,8 @@ void rev_comp(char *orig, char *dest, int len) {
     dest[len - i - 1] = complement(orig[i]);
   }
 
-  dest[len - 1] = '\0';
+//RICARDO -- must be dest[len] = '\0', but strndup must do it
+  //dest[len - 1] = '\0';
 }
 
 //------------------------------------------------------------------------------------
