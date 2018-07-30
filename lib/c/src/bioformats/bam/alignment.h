@@ -147,6 +147,8 @@ void alignment_init_paired_end(char* query_name, char* sequence1, char* sequence
 
 void alignment_update_paired_end(alignment_t* alignment1_p, alignment_t* alignment2_p);
 
+void alignment_set_paired_end_data(alignment_t* alignment1_p, alignment_t* alignment2_p);
+
 /**
 *  @brief Creates an alignment from a bam1_t structure
 *  @param bam_p pointer to the bam1_t structure

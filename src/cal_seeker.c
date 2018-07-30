@@ -73,6 +73,9 @@ array_list_t *filter_cals(size_t num_cals, size_t read_length, array_list_t *lis
       }
     }
 
+    //copy the flag in the new list
+
+    array_list_set_flag(list->flag, cal_list);
     array_list_free(list, (void *) cal_free);
     num_cals = array_list_size(cal_list);
     list = cal_list;
@@ -152,6 +155,9 @@ int apply_caling_bs(cal_seeker_input_t* input, batch_t *batch, caling_bs_stage_w
     read = array_list_get(target_index, mapping_batch->GA_rev_fq_batch);
     list = mapping_batch->mapping_lists[target_index];
 
+
+
+
     if (Ngc <= margen) {
       num_cals = array_list_size(list);
 
@@ -172,6 +178,8 @@ int apply_caling_bs(cal_seeker_input_t* input, batch_t *batch, caling_bs_stage_w
 
     read = array_list_get(target_index, mapping_batch->CT_rev_fq_batch);
     list = mapping_batch->mapping_lists2[target_index];
+
+
 
     if (Ncg <= margen) {
       num_cals = array_list_size(list);

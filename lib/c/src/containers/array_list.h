@@ -32,6 +32,7 @@ typedef struct array_list {
   float realloc_factor;
   int mode;
   int flag;
+  int paired; //in order to know if data has been paired
 
 //  array_list_compare_fn compare_fn;
   int (*compare_fn)(const void *, const void *);

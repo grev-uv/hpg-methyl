@@ -130,6 +130,22 @@ void validate_options(options_t *options, char *mode) {
       printf("Not BWT index input found. Please, insert it with option '-i DIRNAME'.\n");
       usage_cli();
     }
+
+    if (options->pair_mode > 1)
+    {
+    	 printf("Pair mode not valid. Valid values: 0 = single-end, 1 = paired-end.\n");
+    	 usage_cli();
+    }
+    else
+    {
+    	if (options->pair_mode == 1) //PAIRED_END_MODE
+    	{
+    		if (!options->in_filename2) {
+    			printf("Not filename2 input found for paired end. Please, insert it with option '-j FILENAME'.\n");
+    			usage_cli();
+    	    	}
+    	}
+    }
   }
 
   if (!options->min_cal_size) {
@@ -357,14 +373,14 @@ void** argtable_options_new(void) {
      argtable[29] = arg_lit0("h", "help", "Help option");
      argtable[30] = arg_str0(NULL, "prefix", NULL, "File prefix name");
      argtable[31] = arg_file0("g", "ref-genome", NULL, "Reference genome");
-     argtable[32] = arg_file0(" ", " ", NULL, " ");
-     argtable[33] = arg_int0(NULL, " ", NULL, " ");
-     argtable[34] = arg_int0(NULL, " ", NULL, " ");
-     argtable[35] = arg_int0(NULL, " ", NULL, " ");
+     argtable[32] = arg_file0("j", "fq2,fastq2", NULL, "Reads file input #2 (for paired mode)");
+     argtable[33] = arg_int0(NULL, "paired-mode", NULL, "Pair mode: 0 = single-end, 1 = paired-end [Default 0]");
+     argtable[34] = arg_int0(NULL, "paired-min-distance", NULL, "Minimum distance between pairs");
+     argtable[35] = arg_int0(NULL, "paired-max-distance", NULL, "Maximum distance between pairs");
      argtable[36] = arg_int0(NULL, "report-n-best", NULL, "Report the <n> best alignments");
      argtable[37] = arg_int0(NULL, "report-n-hits", NULL, "Report <n> hits");
      argtable[38] = arg_int0(NULL, "num-seeds", NULL, "Number of seeds per read");
-     argtable[39] = arg_int0(NULL, "min-num-seeds", NULL, "Minimum number of seeds to create a CAL (if -1, the maxixum will be taken)");
+     argtable[39] = arg_int0(NULL, "min-num-seeds", NULL, "Minimum number of seeds to create a CAL (if -1, the maximum will be taken)");
      argtable[40] = arg_lit0(NULL, " ", " ");
      argtable[41] = arg_lit0(NULL, " ", " ");
      argtable[42] = arg_int0(NULL, "filter-read-mappings", NULL, "Reads that map in more than <n> locations are discarded");
@@ -466,6 +482,7 @@ options_t *read_CLI_options(void **argtable, options_t *options) {
 
   //new value
   if (((struct arg_int*)argtable[49])->count) { options->max_inner_gap = *(((struct arg_int*)argtable[49])->ival); }
+
 
   return options;
 }

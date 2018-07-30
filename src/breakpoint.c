@@ -154,8 +154,8 @@ void cigar_code_append_op(cigar_op_t *op, cigar_code_t *p) {
       int num_ops = cigar_code_get_num_ops(p);
 
       if (last && num_ops > 1 && last->name == 'S') {
-        printf("00 change S -> M : %s (insert %i%c)\n", new_cigar_code_string(p), 
-               op->number, op->name);
+      //  printf("00 change S -> M : %s (insert %i%c)\n", new_cigar_code_string(p),
+      //         op->number, op->name);
         
         // A little bit tricky
         cigar_op_t *last1 = cigar_code_get_op(num_ops - 2, p);
@@ -167,8 +167,8 @@ void cigar_code_append_op(cigar_op_t *op, cigar_code_t *p) {
           last->name = 'M';
         }
 
-        printf("11 change S -> M : %s (insert %i%c)\n", new_cigar_code_string(p), 
-               op->number, op->name);
+     //   printf("11 change S -> M : %s (insert %i%c)\n", new_cigar_code_string(p),
+     //          op->number, op->name);
       }
       
       array_list_insert(op, p->ops);

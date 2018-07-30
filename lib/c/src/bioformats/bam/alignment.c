@@ -43,6 +43,90 @@ void alignment_init_single_end(char* query_name, char* sequence, char* quality, 
     alignment_p->length = 0;
 }
 
+
+//called when both pairs not map
+void alignment_init_paired_end_none(char* query_name, char* sequence, char* quality, short int strand, unsigned  int chromosome, int position, char* cigar, short int num_cigar_operations, int map_quality, short int is_seq_mapped, short int secondary_alignment, int optional_fields_length, uint8_t *optional_fields, alignment_t* alignment_p, int pair_num) {
+    alignment_p->query_name = query_name;
+    alignment_p->sequence = sequence;
+    alignment_p->quality = quality;
+    alignment_p->cigar = cigar;
+
+    alignment_p->chromosome = chromosome;
+    alignment_p->position = position;
+    alignment_p->mate_position = -1; //0;
+    alignment_p->mate_chromosome = -1; //;
+    alignment_p->template_length = 0; //tlen = 0, not mapping
+    alignment_p->map_quality = map_quality;
+    alignment_p->num_cigar_operations = num_cigar_operations;
+
+    alignment_p->is_paired_end = 1;
+    alignment_p->is_paired_end_mapped = 0;
+    alignment_p->is_seq_mapped = is_seq_mapped;
+    alignment_p->is_mate_mapped = 0;
+    alignment_p->seq_strand = strand;
+    alignment_p->mate_strand = 0;
+    alignment_p->pair_num = pair_num;
+    alignment_p->secondary_alignment = secondary_alignment;
+    alignment_p->fails_quality_check = 0;
+    alignment_p->pc_optical_duplicate = 0;
+
+    alignment_p->optional_fields = (uint8_t *)optional_fields;
+    alignment_p->optional_fields_length = optional_fields_length;
+    alignment_p->optional_tags = array_list_new(10, 1.25f, COLLECTION_MODE_ASYNCHRONIZED);
+
+    alignment_p->map_len = 0;
+    alignment_p->alig_data = NULL;
+    alignment_p->length = 0;
+}
+
+
+
+//called when read not map and mate map
+
+
+void alignment_init_paired_end_map(char* query_name, char* sequence1, char* quality1, short int strand1, unsigned int chromosome1, int position1, char* cigar1, short int num_cigar_operations1, short int map_quality1, short int is_seq_mapped, short int secondary_alignment1, int optional_fields_length, uint8_t *optional_fields, alignment_t* alignment1_p, int pair_num,short int strand2, unsigned int chromosome2, int position2) {
+
+
+
+    //pair 1 init
+    alignment1_p->query_name = query_name;
+    alignment1_p->sequence = sequence1;
+    alignment1_p->quality = quality1;
+    alignment1_p->cigar = cigar1;
+
+    alignment1_p->chromosome = chromosome1;
+    alignment1_p->position = position1;
+    alignment1_p->mate_position = position2;
+    alignment1_p->mate_chromosome = chromosome2;
+    alignment1_p->template_length = 0;
+    alignment1_p->map_quality = map_quality1;
+    alignment1_p->num_cigar_operations = num_cigar_operations1;
+
+    alignment1_p->is_paired_end = 1;
+
+    alignment1_p->is_paired_end_mapped = 0;
+    alignment1_p->is_seq_mapped = is_seq_mapped;
+    alignment1_p->is_mate_mapped = 1;
+
+    alignment1_p->seq_strand = strand1;
+    alignment1_p->mate_strand = strand2;
+    alignment1_p->pair_num = pair_num;
+    alignment1_p->secondary_alignment = secondary_alignment1;
+    alignment1_p->fails_quality_check = 0;
+    alignment1_p->pc_optical_duplicate = 0;
+
+    alignment1_p->optional_fields = (uint8_t *)optional_fields;
+    alignment1_p->optional_fields_length = optional_fields_length;
+    alignment1_p->optional_tags = array_list_new(10, 1.25f, COLLECTION_MODE_ASYNCHRONIZED);
+
+    alignment1_p->map_len = 0;
+    alignment1_p->alig_data = NULL;
+    alignment1_p->length = 0;
+
+}
+
+
+
 void alignment_init_paired_end(char* query_name, char* sequence1, char* sequence2, char* quality1, char* quality2, short int strand1, short int strand2, unsigned int chromosome1, int position1, int position2, unsigned int chromosome2, char* cigar1, char* cigar2, short int num_cigar_operations1, short int num_cigar_operations2, short int map_quality1, short int map_quality2, short int secondary_alignment1, short int secondary_alignment2,  alignment_t* alignment1_p, alignment_t* alignment2_p) {
     //pair 1 init
     alignment1_p->query_name = query_name;
@@ -191,6 +275,181 @@ void alignment_update_paired_end(alignment_t* alignment1_p, alignment_t* alignme
         alignment2_p->is_seq_mapped = 0;
         alignment2_p->is_mate_mapped = 0;
     }
+}
+
+
+void alignment_set_paired_end_data(alignment_t* alignment1_p, alignment_t* alignment2_p)
+{
+
+
+	  // updating pair 1
+	    alignment1_p->mate_position = alignment2_p->position;
+	    alignment1_p->mate_chromosome = alignment2_p->chromosome;
+
+	    alignment1_p->is_paired_end = 1;
+
+	    alignment1_p->mate_strand = alignment2_p->seq_strand;
+	    alignment1_p->pair_num = 1;
+
+	    // updating pair 2
+	    alignment2_p->mate_position = alignment1_p->position;
+	    alignment2_p->mate_chromosome = alignment1_p->chromosome;
+
+	    alignment2_p->is_paired_end = 1;
+
+	    alignment2_p->mate_strand = alignment1_p->seq_strand;
+	    alignment2_p->pair_num = 2;
+
+	    // commons
+	    if ((alignment1_p->position) && (alignment2_p->position)) {
+
+	        alignment1_p->is_paired_end_mapped = 1;
+	        alignment1_p->is_seq_mapped = 1;
+	        alignment1_p->is_mate_mapped = 1;
+
+	        alignment2_p->is_paired_end_mapped = 1;
+	        alignment2_p->is_seq_mapped = 1;
+	        alignment2_p->is_mate_mapped = 1;
+
+	        //Calculate TLEN
+
+
+
+	        int tlen = 0;
+	        int tmin = 0;
+	        int tmax = 0;
+	        if (alignment1_p->position < alignment2_p->position)
+	          	tmin = alignment1_p->position;
+	        else
+	        	tmin = alignment2_p->position;
+
+
+	        if ((alignment1_p->position + strlen(alignment1_p->sequence)) > (alignment2_p->position + strlen(alignment2_p->sequence)))
+			   tmax = (alignment1_p->position + strlen(alignment1_p->sequence));
+	        else
+	           tmax = (alignment2_p->position + strlen(alignment2_p->sequence));
+
+
+
+	        if (alignment1_p->position < alignment2_p->position)
+	        {
+	        	alignment1_p->template_length = tmax - tmin;
+	        	alignment2_p->template_length = tmin - tmax;
+	        }
+	        else
+	        {
+	          	alignment1_p->template_length = tmin - tmax;
+	           	alignment2_p->template_length = tmax - tmin;
+	        }
+
+
+	    } else if (alignment1_p->position) {
+
+	        alignment1_p->is_paired_end_mapped = 0;
+	        alignment1_p->is_seq_mapped = 1;
+	        alignment1_p->is_mate_mapped = 0;
+
+	        alignment2_p->is_paired_end_mapped = 0;
+	        alignment2_p->is_seq_mapped = 0;
+	        alignment2_p->is_mate_mapped = 1;
+
+	    } else if (alignment2_p->position) {
+
+	        alignment1_p->is_paired_end_mapped = 0;
+	        alignment1_p->is_seq_mapped = 0;
+	        alignment1_p->is_mate_mapped = 1;
+
+	        alignment2_p->is_paired_end_mapped = 0;
+	        alignment2_p->is_seq_mapped = 1;
+	        alignment2_p->is_mate_mapped = 0;
+
+	    } else {
+
+	        alignment1_p->is_paired_end_mapped = 0;
+	        alignment1_p->is_seq_mapped = 0;
+	        alignment1_p->is_mate_mapped = 0;
+
+	        alignment2_p->is_paired_end_mapped = 0;
+	        alignment2_p->is_seq_mapped = 0;
+	        alignment2_p->is_mate_mapped = 0;
+	    }
+
+
+
+}
+
+//Only set first alignment paired information (called when no is_paired_end_mapped, but both reads map)
+void alignment_set_paired_end_data_best(alignment_t* alignment1_p, alignment_t* alignment2_p, int pair_num)
+{
+
+
+	  // updating pair 1
+	    alignment1_p->mate_position = alignment2_p->position;
+	    alignment1_p->mate_chromosome = alignment2_p->chromosome;
+	    alignment1_p->mate_strand = alignment2_p->seq_strand;
+
+	    alignment1_p->is_paired_end = 1;
+	 	alignment1_p->is_paired_end_mapped = 0;
+	    alignment1_p->pair_num = pair_num;
+
+
+	    alignment1_p->is_seq_mapped = 1;
+	  	alignment1_p->is_mate_mapped = 1;
+
+	    //TLEN
+	    alignment1_p->template_length = 0;
+
+
+}
+
+//Only set first alignment paired information (called when pair2 not map, and pair 1 map)
+void alignment_set_paired_end_data_pair2none(alignment_t* alignment1_p, int pair_num)
+{
+
+
+	  // updating pair 1
+	    alignment1_p->mate_position = -1;
+	    alignment1_p->mate_chromosome = -1;
+	    alignment1_p->mate_strand = 0;
+
+	    alignment1_p->is_paired_end = 1;
+	    alignment1_p->is_paired_end_mapped = 0;
+	    alignment1_p->pair_num = pair_num;
+
+
+        alignment1_p->is_seq_mapped = 1;
+	    alignment1_p->is_mate_mapped = 0;
+
+	    //TLEN
+	   	alignment1_p->template_length = 0;
+
+
+}
+
+
+//Only set first alignment paired information (called when pair1 not map, and pair 2 map)
+void alignment_set_paired_end_data_pair1none(alignment_t* alignment1_p, alignment_t* alignment2_p, int pair_num)
+{
+
+
+	  // updating pair 1
+
+	    alignment1_p->mate_position = alignment2_p->position;
+	    alignment1_p->mate_chromosome = alignment2_p->chromosome;
+	    alignment1_p->mate_strand = alignment2_p->seq_strand;
+
+	    alignment1_p->is_paired_end = 1;
+	    alignment1_p->is_paired_end_mapped = 0;
+	    alignment1_p->pair_num = pair_num;
+
+
+        alignment1_p->is_seq_mapped = 0;
+	    alignment1_p->is_mate_mapped = 1;
+
+	    //TLEN
+	   	alignment1_p->template_length = 0;
+
+
 }
 
 
@@ -357,7 +616,7 @@ bam1_t* convert_to_bam(alignment_t* alignment_p, int base_quality) {
     if (alignment_p->fails_quality_check)  bam_p->core.flag += BAM_FQCFAIL;
     if (alignment_p->pc_optical_duplicate) bam_p->core.flag += BAM_FDUP;
 
-    //bin field requieres core
+    //bin field requires core
     bam_p->core.bin = bam_reg2bin(alignment_p->position, bam_calend(&bam_p->core, bam1_cigar(bam_p)));
 
     return bam_p;

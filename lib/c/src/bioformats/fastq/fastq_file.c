@@ -122,6 +122,8 @@ size_t fastq_fread_pe(array_list_t *reads, size_t num_reads, fastq_file_t *fq_fi
 		chomp_at(sequence1, sequence_length1 - 1);
 		chomp_at(qualities1, quality_length1 - 1);
 
+
+
 		// second file
 		res = fgets(header2, MAX_READ_ID_LENGTH, fq_file2->fd);
 		res = fgets(sequence2, MAX_READ_SEQUENCE_LENGTH, fq_file2->fd);
@@ -224,28 +226,61 @@ size_t fastq_fread_bytes_aligner_pe(array_list_t *reads, size_t bytes, fastq_fil
 		chomp_at(sequence1, sequence_length1 - 1);
 		chomp_at(qualities1, quality_length1 - 1);
 
-		// second file
-		res = fgets(header2, MAX_READ_ID_LENGTH, fq_file2->fd);
-		res = fgets(sequence2, MAX_READ_SEQUENCE_LENGTH, fq_file2->fd);
-		res = fgets(read_separator, MAX_READ_ID_LENGTH, fq_file2->fd);
-		res = fgets(qualities2, MAX_READ_SEQUENCE_LENGTH, fq_file2->fd);
 
-		header_length2 = strlen(header2);
-		sequence_length2 = strlen(sequence2);
-		quality_length2 = strlen(qualities2);
+		/*int numN1=0;
+		char *seq1 = sequence1;
+		while ((seq1 = strchr(seq1,'N')) != NULL)
+		{
+			seq1++;
+			numN1++;
+		}
 
-		// '\n' char is removed, but '\0' is left
-		chomp_at(header2, header_length2 - 1);
-		chomp_at(sequence2, sequence_length2 - 1);
-		chomp_at(qualities2, quality_length2 - 1);
+		if (numN1 < 1000)//(sequence_length1 / 10))*/
+		{
 
-		read1 = fastq_read_new(header1, sequence1, qualities1);
-		read2 = fastq_read_new(header2, sequence2, qualities2);
+			// second file
+			res = fgets(header2, MAX_READ_ID_LENGTH, fq_file2->fd);
+			res = fgets(sequence2, MAX_READ_SEQUENCE_LENGTH, fq_file2->fd);
+			res = fgets(read_separator, MAX_READ_ID_LENGTH, fq_file2->fd);
+			res = fgets(qualities2, MAX_READ_SEQUENCE_LENGTH, fq_file2->fd);
 
-		array_list_insert(read1, reads);
-		array_list_insert(read2, reads);
+			header_length2 = strlen(header2);
+			sequence_length2 = strlen(sequence2);
+			quality_length2 = strlen(qualities2);
 
-		accumulated_size += header_length1 + sequence_length1 + quality_length1 + header_length2 + sequence_length2 + quality_length2;
+			// '\n' char is removed, but '\0' is left
+			chomp_at(header2, header_length2 - 1);
+			chomp_at(sequence2, sequence_length2 - 1);
+			chomp_at(qualities2, quality_length2 - 1);
+
+			/*int numN2=0;
+			char *seq2 = sequence2;
+			while ((seq2 = strchr(seq2,'N')) != NULL)
+			{
+				seq2++;
+				numN2++;
+			}
+
+			if (numN2 < 1000)//(sequence_length2 / 10))*/
+			{
+
+				read1 = fastq_read_new(header1, sequence1, qualities1);
+				read2 = fastq_read_new(header2, sequence2, qualities2);
+
+				array_list_insert(read1, reads);
+				array_list_insert(read2, reads);
+
+				accumulated_size += header_length1 + sequence_length1 + quality_length1 + header_length2 + sequence_length2 + quality_length2;
+			}
+			/*else
+					{
+						int descartar = 1;
+					}*/
+		}/*
+		else
+		{
+			int descartar = 1;
+		}*/
 	}
 
 	return accumulated_size;

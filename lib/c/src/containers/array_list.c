@@ -41,6 +41,7 @@ array_list_t* array_list_new(size_t initial_capacity, float realloc_factor, int 
 	array_list_p->mode = SYNC_MODE;
 	array_list_p->compare_fn = compare_items;
 	array_list_p->flag = 0;
+	array_list_p->paired = 0;
 	array_list_p->items = (void**) malloc(initial_capacity * sizeof(void*));
 
 	if (array_list_p->mode == COLLECTION_MODE_SYNCHRONIZED) {
@@ -116,6 +117,7 @@ int array_list_clear(array_list_t *array_list_p,  void (*data_callback) (void* d
 		}
 		// Set default parameters
 		array_list_p->size = 0;
+		array_list_p->paired = 0;
 //		array_list_init(10, 1.5, COLLECTION_MODE_SYNCHRONIZED, array_list_p);
 		return 1;
 	}

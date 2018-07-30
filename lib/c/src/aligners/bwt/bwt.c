@@ -80,7 +80,7 @@ cal_t *cal_new(const size_t chromosome_id,
   cal->read_area = 0;
   cal->info = NULL;
   cal->fill_gaps = 0;
-  cal->num_targets;
+  cal->num_targets = 0;
   cal->candidates_seeds_start = array_list_new(10, 1.25f, COLLECTION_MODE_ASYNCHRONIZED);
   cal->candidates_seeds_end = array_list_new(10, 1.25f, COLLECTION_MODE_ASYNCHRONIZED);
 

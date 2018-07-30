@@ -480,6 +480,43 @@ unsigned int get_to_first_blank(char *str_p, unsigned int length, char *str_out_
 }
 
 
+//-----------------------------------------------------------------
+// Return the substring from start to first \n
+// If first position contains '@' this not
+//-----------------------------------------------------------------
+unsigned int get_to_first_end(char *str_p, unsigned int length, char *str_out_p) {
+  unsigned int str_pos, res_pos = 0;
+
+  if (str_p == NULL) {
+    printf("Input string is NULL\n");
+    return 0;
+  }
+  //printf("-->%c\n", str_p[0]);
+  if (str_p[0] == '@') {
+    str_pos = 1;
+  } else {
+    str_pos = 0;
+  }
+
+  while ((str_p[str_pos] != '/') &&
+	 (str_pos < length)) {
+    //printf("-->%c/%i\n", str_p[str_pos], str_pos);
+	if (str_p[str_pos] != ' ')
+		str_out_p[res_pos] = str_p[str_pos];
+	else
+		str_out_p[res_pos] = '_';
+    //printf("<--%c/%i\n", str_out_p[res_pos], res_pos);
+    str_pos++;
+    res_pos++;
+  }
+
+  str_out_p[res_pos] = '\0';
+
+  res_pos++;
+  return res_pos;
+}
+
+
 char *str_reverse(char *str) {
   if (!str) { return NULL; }
   

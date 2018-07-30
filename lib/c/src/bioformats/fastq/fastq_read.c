@@ -12,7 +12,8 @@ fastq_read_t *fastq_read_new(char *id, char *sequence, char *quality) {
   fq_read->id = (char *)malloc(sizeof(char)*(id_length + 1));
   //printf("READ-ID(%i): %s\n", id_length, id);
 
-  get_to_first_blank(id, id_length, fq_read->id);
+  get_to_first_blank(id, id_length, fq_read->id);  //RICARDO, needed for paired-end, the same name for the paired reads
+  //get_to_first_end(id, id_length, fq_read->id);  //RICARDO, needed for paired-end, different name for the paired reads
 
   fq_read->sequence = strdup(sequence);
   fq_read->quality = strdup(quality);

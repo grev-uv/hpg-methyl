@@ -19,5 +19,6 @@ int bs_writer(void *data);
 
 void write_mapped_read(array_list_t *array_list, bam_file_t *bam_file);
 void write_unmapped_read(fastq_read_t *fq_read, bam_file_t *bam_file);
+void write_unmapped_read_paired_none(fastq_read_t *fq_read, bam_file_t *bam_file, int pair_num);
 
 #endif // BS_WRITER_H

@@ -302,7 +302,7 @@ void apply_sw_bs_4nt(sw_server_input_t* input, batch_t *batch, apply_sw_bs_stage
   merge_seed_regions_bs(mapping_batch, 0);
   fill_end_gaps_bs(mapping_batch, sw_optarg, genome1, genome2, 20, 5, 0, workspace);
 
-  fill_gaps_bs(mapping_batch, sw_optarg, genome2, genome1, 20, 5, 1, sw_optarg2, sw_optarg1, workspace);
+  fill_gaps_bs(mapping_batch, sw_optarg, genome2, genome1, 20, 5, 1, sw_optarg1, sw_optarg2, workspace);
   merge_seed_regions_bs(mapping_batch, 1);
   fill_end_gaps_bs(mapping_batch, sw_optarg, genome2, genome1, 20, 5, 1, workspace);
 
@@ -430,6 +430,10 @@ void apply_sw_bs_4nt(sw_server_input_t* input, batch_t *batch, apply_sw_bs_stage
         }
       }
       
+      //Update paired flag
+      if (cal_list->paired)
+    	  alignment_list->paired = cal_list->paired;
+
       // free the cal list, and update the mapping list with the alignment list
       array_list_free(cal_list, (void *) cal_free2);
       mapping_lists[read_index] = alignment_list;

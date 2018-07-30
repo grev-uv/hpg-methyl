@@ -343,6 +343,7 @@ char** splitn(char *str, const char *delimiters, int limit, int *num_substrings)
 /**
  */
 unsigned int get_to_first_blank(char *str_p, unsigned int length, char *str_out_p);
+unsigned int get_to_first_end(char *str_p, unsigned int length, char *str_out_p);
 
 /**
  * @brief Case-insensitive string comparison. Inspired in non-standard function:

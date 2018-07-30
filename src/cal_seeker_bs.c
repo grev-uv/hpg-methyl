@@ -160,6 +160,9 @@ void fill_gaps_bs(mapping_batch_t *mapping_batch, sw_optarg_t *sw_optarg,
 		read1 = (fastq_read_t *)array_list_get(read_index, fq_batch1);
 		read2 = (fastq_read_t *)array_list_get(read_index, fq_batch2);
 
+
+
+
 		cal_list = mapping_lists[read_index];
 		num_cals = array_list_size(cal_list);
 

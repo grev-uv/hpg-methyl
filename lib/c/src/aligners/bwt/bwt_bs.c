@@ -201,6 +201,8 @@ void __bwt_map_inexact_read_bs_new(fastq_read_t *read,
   char *seq = read->sequence;
   size_t total_read_len = read->length;
 
+  size_t MAX_LENGTH = MAX_LENGTH_AUX_VECTOR;	//RICARDO
+
   size_t start = start_read;
   size_t end = end_read;
   size_t len = end_read - start_read + 1;
@@ -214,13 +216,16 @@ void __bwt_map_inexact_read_bs_new(fastq_read_t *read,
   }
 
   if (len < 5) {
-    return interval;
+    return;
+    //return interval;
+
   }
 
   char *seq_dup, *seq_strand, *quality_clipping;
 
   if (workspace->map_inexact_read_code_seq == NULL) {
-    workspace->map_inexact_read_code_seq = malloc(total_read_len * sizeof(char));
+    //workspace->map_inexact_read_code_seq = malloc(total_read_len * sizeof(char));
+	  workspace->map_inexact_read_code_seq = malloc(MAX_LENGTH * sizeof(char));
   }
 
   char *code_seq = workspace->map_inexact_read_code_seq;
@@ -232,19 +237,23 @@ void __bwt_map_inexact_read_bs_new(fastq_read_t *read,
   // (end - start) <= 400
   // Calculate vectors k and l
   if (workspace->map_inexact_read_k1 == NULL) {
-    workspace->map_inexact_read_k1 = malloc(len * sizeof(size_t));
+    //workspace->map_inexact_read_k1 = malloc(len * sizeof(size_t));
+	  workspace->map_inexact_read_k1 = malloc(MAX_LENGTH * sizeof(size_t));
   }
 
   if (workspace->map_inexact_read_l1 == NULL) {
-    workspace->map_inexact_read_l1 = malloc(len * sizeof(size_t));
+    //workspace->map_inexact_read_l1 = malloc(len * sizeof(size_t));
+    workspace->map_inexact_read_l1 = malloc(MAX_LENGTH * sizeof(size_t));
   }
 
   if (workspace->map_inexact_read_ki1 == NULL) {
-    workspace->map_inexact_read_ki1 = malloc(len * sizeof(size_t));
+    //workspace->map_inexact_read_ki1 = malloc(len * sizeof(size_t));
+    workspace->map_inexact_read_ki1 = malloc(MAX_LENGTH * sizeof(size_t));
   }
 
   if (workspace->map_inexact_read_li1 == NULL) {
-    workspace->map_inexact_read_li1 = malloc(len * sizeof(size_t));
+    //workspace->map_inexact_read_li1 = malloc(len * sizeof(size_t));
+    workspace->map_inexact_read_li1 = malloc(MAX_LENGTH * sizeof(size_t));
   }
 
   size_t *k1 = workspace->map_inexact_read_k1;
@@ -298,11 +307,14 @@ void __bwt_map_inexact_read_bs_new(fastq_read_t *read,
   error = MISMATCH;
 
   if (workspace->map_inexact_read_seq_dup == NULL) {
-    workspace->map_inexact_read_seq_dup = malloc(sizeof(char) * (len + 1));
+	//workspace->map_inexact_read_seq_dup = malloc(sizeof(char) * (len + 1));
+    workspace->map_inexact_read_seq_dup = malloc(sizeof(char) * (MAX_LENGTH  + 1));
+
   }
 
   if (workspace->map_inexact_read_quality_clipping == NULL) {
-    workspace->map_inexact_read_quality_clipping = calloc(len + 1, sizeof(char));
+    //workspace->map_inexact_read_quality_clipping = calloc(len + 1, sizeof(char));
+    workspace->map_inexact_read_quality_clipping = calloc(MAX_LENGTH  + 1, sizeof(char));
   } else {
     memset(workspace->map_inexact_read_quality_clipping, 0, len + 1);
   }

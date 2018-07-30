@@ -27,7 +27,7 @@ inline array_list_t *create_new_list(size_t *valid_items, size_t num_valids, arr
     }
   }
 
-  if (flag == 1) {
+  if (flag == ALIGNMENTS_FOUND) {
     array_list_free(list, (void *) alignment_free);
   } else {
     array_list_free(list, (void *) cal_free);
@@ -281,6 +281,9 @@ int apply_pair(pair_server_input_t* input, batch_t *batch, apply_pair_bs_stage_w
     start_timer(prepair_start);
   }
 
+
+
+
   mapping_batch_t *mapping_batch = batch->mapping_batch;
   array_list_t *fq_batch = mapping_batch->fq_batch;
 
@@ -288,6 +291,7 @@ int apply_pair(pair_server_input_t* input, batch_t *batch, apply_pair_bs_stage_w
   size_t min_distance = input->pair_mng->min_distance;
   size_t max_distance = input->pair_mng->max_distance;
   int distance;
+
 
   size_t num_items1, num_items2, num_reads = array_list_size(fq_batch);
 
@@ -327,26 +331,63 @@ int apply_pair(pair_server_input_t* input, batch_t *batch, apply_pair_bs_stage_w
   cal_t *cal;
 
   for (size_t i = 0; i < num_reads; i += 2) {
-    list1 = mapping_batch->mapping_lists[i];
-    list2 = mapping_batch->mapping_lists[i + 1];
 
-    flag1 = array_list_get_flag(list1);
-    flag2 = array_list_get_flag(list2);
+	  //In order to differentiate list mode (mapping_list and mapping_list2, or vice versa)
+	  for (int option = 0; option < 2; option++) {
 
-    num_items1 = 0;
 
-    if (list1 != NULL) {
-      num_items1 = array_list_size(list1);
+
+
+	if (option == 0)
+	{
+
+		list1 = mapping_batch->mapping_lists[i];
+		list2 = mapping_batch->mapping_lists2[i + 1];
+
+		flag1 = array_list_get_flag(list1);
+		flag2 = array_list_get_flag(list2);
+
+		num_items1 = 0;
+
+		if (list1 != NULL) {
+			num_items1 = array_list_size(list1);
+		}
+
+		num_items2 = 0;
+
+		if (list2 != NULL) {
+			num_items2 = array_list_size(list2);
+		}
+
+
+	}
+
+	else if (option == 1)
+    {
+
+    	list1 = mapping_batch->mapping_lists2[i];
+    	list2 = mapping_batch->mapping_lists[i + 1];
+
+    	flag1 = array_list_get_flag(list1);
+    	flag2 = array_list_get_flag(list2);
+
+    	num_items1 = 0;
+
+    	if (list1 != NULL) {
+    	    num_items1 = array_list_size(list1);
+    	}
+
+    	num_items2 = 0;
+
+    	if (list2 != NULL) {
+    	    num_items2 = array_list_size(list2);
+    	}
     }
 
-    num_items2 = 0;
-
-    if (list2 != NULL) {
-      num_items2 = array_list_size(list2);
-    }
-
-    if (num_items1 > 1 && num_items2 > 1) {
-      // initalizes memory and counters
+    if (num_items1 > 0 && num_items2 > 0)
+    		//&& (num_items1 > 1 || num_items2 > 1))
+    {
+      // initializes memory and counters
       mapped1_counter = 0;
 
       if (allocated_mapped1 < num_items1) {
@@ -371,21 +412,35 @@ int apply_pair(pair_server_input_t* input, batch_t *batch, apply_pair_bs_stage_w
       memset(mapped2, 0, num_items2 * sizeof(size_t));
       pair_found = 0;
 
+
+
+
+
       // search for pairs properly aligned
       for (size_t j1 = 0; j1 < num_items1; j1++) {
-        if (flag1 == 1) {
+        if (flag1 == ALIGNMENTS_FOUND) {
           alig = (alignment_t *) array_list_get(j1, list1);
           chr1 = alig->chromosome;
           strand1 = alig->seq_strand;
           end1 = alig->position + strlen(alig->sequence);
-        } else if (flag1 == 2) {
+        } else if (flag1 == MULTIPLE_ANCHORS || flag1 == SINGLE_ANCHORS) {
           cal = (cal_t *) array_list_get(j1, list1);
           chr1 = cal->chromosome_id - 1;
           strand1 = cal->strand;
           end1 = cal->end;
-        } else {
-          printf("Error in pair_server.c, apply_sw function (pair1)\n");
-          abort();
+        }
+        else if (flag1 == NOT_ANCHORS)
+        {
+      	  chr1 = -1;
+      	  strand1 = -1;
+      	  end1 = 0;
+      	  break;
+
+        }
+      	 else
+      	 {
+      		 printf("Error in pair_server.c, apply_sw function (pair2)\n");
+      		 abort();
         }
 
         for (size_t j2 = 0; j2 < num_items2; j2++) {
@@ -393,19 +448,29 @@ int apply_pair(pair_server_input_t* input, batch_t *batch, apply_pair_bs_stage_w
             continue;
           }
 
-          if (flag2 == 1) {
+          if (flag2 == ALIGNMENTS_FOUND) {
             alig = (alignment_t *) array_list_get(j2, list2);
             chr2 = alig->chromosome;
             strand2 = alig->seq_strand;
             start2 = alig->position;
-          } else if (flag2 == 2) {
+          } else if (flag2 == MULTIPLE_ANCHORS || flag2 == SINGLE_ANCHORS) {
             cal = (cal_t *) array_list_get(j2, list2);
             chr2 = cal->chromosome_id - 1;
             strand2 = cal->strand;
             start2 = cal->start;
-          } else {
-            printf("Error in pair_server.c, apply_sw function (pair2)\n");
-            abort();
+          }
+          else if (flag2 == NOT_ANCHORS)
+          {
+        	  chr2 = -1;
+        	  strand2 = -1;
+        	  start2 = 0;
+        	  break;
+
+          }
+        	 else
+        	 {
+        		 printf("Error in pair_server.c, apply_sw function (pair2)\n");
+        		 abort();
           }
 
           // computes distance between alignments,
@@ -427,17 +492,40 @@ int apply_pair(pair_server_input_t* input, batch_t *batch, apply_pair_bs_stage_w
         } // end for j2..num_items2
       } // end for j1..num_item1
 
+
+
+
       if (pair_found) {
         // removing no valid items
         if (mapped1_counter != num_items1) {
-          mapping_batch->mapping_lists[i] = create_new_list(mapped1, mapped1_counter, list1);
+        	if (option == 0)
+        		mapping_batch->mapping_lists[i] = create_new_list(mapped1, mapped1_counter, list1);
+        	else
+        		mapping_batch->mapping_lists2[i] = create_new_list(mapped1, mapped1_counter, list1);
         }
 
         if (mapped2_counter != num_items2) {
-          mapping_batch->mapping_lists[i + 1] = create_new_list(mapped2, mapped2_counter, list2);
+        	if (option == 0)
+        		mapping_batch->mapping_lists2[i + 1] = create_new_list(mapped2, mapped2_counter, list2);
+        	else
+        		mapping_batch->mapping_lists[i + 1] = create_new_list(mapped2, mapped2_counter, list2);
         }
+        //Set pair_found variable
+        if (option == 0)
+        {
+        	mapping_batch->mapping_lists[i]->paired = 1;
+        	mapping_batch->mapping_lists2[i+1]->paired = 1;
+        }
+        else
+        {
+        	mapping_batch->mapping_lists2[i]->paired = 1;
+        	mapping_batch->mapping_lists[i+1]->paired = 1;
+        }
+
+
       }      
     }
+   }
   }
 
   if (time_on) {
@@ -446,15 +534,19 @@ int apply_pair(pair_server_input_t* input, batch_t *batch, apply_pair_bs_stage_w
   }
 
   // go to the next stage
-  if (batch->mapping_batch->num_targets > 0) {
-    return SW_STAGE;
+
+if ((batch->mapping_batch->num_targets  > 0) ||
+	(batch->mapping_batch->num_targets2 > 0)) {
+    return BS_SW_STAGE;
   }
 
-  return DNA_POST_PAIR_STAGE;
+  return BS_POST_PAIR_STAGE;
+
+
 }
 
 //====================================================================================
-// main functions: apply pair and prperare alignments
+// main functions: apply pair and prepare alignments
 //====================================================================================
 
 void clean_prepare_alignments_bs_stage_workspace(void *workspace) {
@@ -470,6 +562,11 @@ void clean_prepare_alignments_bs_stage_workspace(void *workspace) {
 int prepare_alignments_bs(pair_server_input_t *input, batch_t *batch, prepare_alignments_bs_workspace_t *workspace) {
   struct timeval post_pair_time_start, post_pair_time_end;
   float post_pair_time = 0.0f;
+  alignment_t *pair1,*pair2;
+  array_list_t *list1, *list2;
+  size_t num_items1, num_items2;
+
+  int option = 0;   //In order to differentiate list mode (mapping_list and mapping_list2, or vice versa)
 
   if (time_on) {
     start_timer(post_pair_time_start);
@@ -491,6 +588,7 @@ int prepare_alignments_bs(pair_server_input_t *input, batch_t *batch, prepare_al
 			    array_list_size(batch->mapping_batch->fq_batch),
 			    batch->mapping_batch->mapping_lists2);
   }
+
 
   if (time_on) {
     stop_timer(post_pair_time_start, post_pair_time_end, post_pair_time);

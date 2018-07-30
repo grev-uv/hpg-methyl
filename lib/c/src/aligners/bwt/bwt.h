@@ -25,6 +25,8 @@
 
 #define BWT_MAX_INEXACT_READ_DELETE_MARK    512
 
+#define MAX_LENGTH_AUX_VECTOR 4000;	//RICARDO
+
 #ifndef MAX
   #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 #endif

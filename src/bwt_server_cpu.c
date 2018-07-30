@@ -18,6 +18,7 @@
 //#define MAX_BWT_REGIONS 100	//100
 #define MAX_BWT_ANCHOR_DISTANCE 500000
 #define MAX_BIG_ANCHOR_SIZE 20 //16
+#define MIN_SIZE_BIG_ANCHOR_READ 100//In order to calculate big anchors
 
 //====================================================================================
 // bwt_server_input functions: init
@@ -119,8 +120,8 @@ size_t bwt_search_pair_anchors(array_list_t *list, unsigned int read_length, siz
     	anchor_length_tmp = bwt_anchor->end - bwt_anchor->start + 1;
     	found_anchor = 1;
 
-			if (read_length - anchor_length_tmp < MAX_BIG_ANCHOR_SIZE) { //16 --> 20
-    		array_list_insert(bwt_anchor, big_anchor_list);
+			if ((read_length >= MIN_SIZE_BIG_ANCHOR_READ) && (read_length - anchor_length_tmp < MAX_BIG_ANCHOR_SIZE)) { //16 --> 20
+				array_list_insert(bwt_anchor, big_anchor_list);
     	}
     } else {
 			// Borrar bwt_anchor
@@ -149,8 +150,10 @@ size_t bwt_search_pair_anchors(array_list_t *list, unsigned int read_length, siz
       array_list_insert(cal, list);
     }
 
-    array_list_set_flag(SINGLE_ANCHORS, list);
-
+    if (array_list_size(list) > 1)
+    	array_list_set_flag(MULTIPLE_ANCHORS, list);
+    else
+    	array_list_set_flag(SINGLE_ANCHORS, list);
 		//Big anchor is almost a matching, so it only will be one if exists
     goto exit; 
   }
@@ -521,6 +524,8 @@ int apply_bwt_bs(bwt_server_input_t* input, batch_t *batch, bwt_stage_bs_workspa
       }
     }
 
+
+
 		// Post-process alignment
     if ((array_list_get_flag(mapping_batch->mapping_lists[i]) == BWT_BS_MATCHING_EXACT  && 
 	 			 mapping_batch->mapping_lists[i]->size)										  										|| 
@@ -558,6 +563,26 @@ int apply_bwt_bs(bwt_server_input_t* input, batch_t *batch, bwt_stage_bs_workspa
 	  			array_list_clear( mapping_batch->mapping_lists2[i], (void *)bwt_anchor_free);
 	  			array_list_set_flag(NOT_ANCHORS, mapping_batch->mapping_lists2[i]);	  
 				}
+
+				if ((mapping_batch->mapping_lists[i]->size) && (mapping_batch->mapping_lists2[i]->size)) {
+				//case with anchors in both mapping_lists, check if there are a big anchor, and let this mapping_list
+					if ((array_list_get_flag(mapping_batch->mapping_lists[i]) == SINGLE_ANCHORS) &&
+						(array_list_get_flag(mapping_batch->mapping_lists2[i]) != SINGLE_ANCHORS))
+						{
+							array_list_clear( mapping_batch->mapping_lists2[i], (void *)bwt_anchor_free);
+							array_list_set_flag(NOT_ANCHORS, mapping_batch->mapping_lists2[i]);
+						}
+					else
+					{
+						if ((array_list_get_flag(mapping_batch->mapping_lists2[i]) == SINGLE_ANCHORS) &&
+							(array_list_get_flag(mapping_batch->mapping_lists[i]) != SINGLE_ANCHORS))
+							{
+								array_list_clear( mapping_batch->mapping_lists[i], (void *)bwt_anchor_free);
+								array_list_set_flag(NOT_ANCHORS, mapping_batch->mapping_lists[i]);
+							}
+					}
+				}
+
 
 				if ((mapping_batch->mapping_lists[i]->size) || (mapping_batch->mapping_lists2[i]->size)) {
 					mapping_batch->targets[(mapping_batch->num_targets)++] = i;

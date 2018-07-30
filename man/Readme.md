@@ -114,3 +114,22 @@ certain alignments in the BAM file using the following options:
   reference genome, store the first `<n>` hits found, regardless of their quality.
 * `--report-n-best`: If there are mapped reads matching to the same location on the
   reference genome, store the `<n>` best hits found for the location.
+
+
+## Paired-end mode
+
+HPG-Methyl is able to process paired-end sequenced reads.
+In order to do that, the `--paired-mode` command line option must be set to 1 (by default is 0, single-end mode).
+The paired-end sequences must be separated in two differents fastq files, but only one bam file with the mapped alignments will be created.
+
+If paired-end mode is set, a mandatory command line `-j` / `--fq2` / `--fastq2` is required, in order to set the path to the second FASTQ sequence file.
+
+Following is an example of use:
+
+hpg-methyl bs -i <index-directory> --paired-mode 1 -f <fastq-file-path-1> -j <fastq-file-path-2> -o <output-directory> --cpu-threads <thread-count>
+
+
+
+
+
+
