@@ -126,7 +126,7 @@ If paired-end mode is set, a mandatory command line `-j` / `--fq2` / `--fastq2` 
 
 Following is an example of use:
 
-hpg-methyl bs -i <index-directory> --paired-mode 1 -f <fastq-file-path-1> -j <fastq-file-path-2> -o <output-directory> --cpu-threads <thread-count>
+hpg-methyl bs -i index-directory --paired-mode 1 -f fastq-file-path-1 -j fastq-file-path-2 -o output-directory --cpu-threads thread-count
 
 
 
