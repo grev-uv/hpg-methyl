@@ -99,8 +99,8 @@ void run_bs_aligner(genome_t *genome2, genome_t *genome1, genome_t *genome,
   sw_input.genome1_p = genome1;
   sw_input.genome2_p = genome2;
 
-  sw_input.valuesCT = (unsigned long long **)malloc(50 * sizeof(unsigned long long *));
-  sw_input.valuesGA = (unsigned long long **)malloc(50 * sizeof(unsigned long long *));
+  sw_input.valuesCT = (unsigned long long **)malloc(options->max_num_chromosomes * sizeof(unsigned long long *));	//ponia 50
+  sw_input.valuesGA = (unsigned long long **)malloc(options->max_num_chromosomes * sizeof(unsigned long long *));	//ponia 50
 
   int gen_loads = load_encode_context(options->bwt_dirname, sw_input.valuesCT, sw_input.valuesGA);
   

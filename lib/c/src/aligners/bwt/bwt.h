@@ -200,6 +200,7 @@ typedef struct bwt_optarg {
   int filter_seed_mappings;
   size_t min_cal_size;
   double umbral_cal_length_factor;
+  int max_num_chromosomes;
   int min_read_discard;
   int max_inner_gap;
 } bwt_optarg_t;
@@ -211,7 +212,8 @@ bwt_optarg_t *bwt_optarg_new(const size_t num_errors,
 				 const size_t min_cal_size,
 				 const double umbral_cal_length_factor,
 				 const int min_read_discard,
-				 const int max_inner_gap);
+				 const int max_inner_gap,
+				 const int max_num_chromosomes);
 
 void bwt_optarg_free(bwt_optarg_t *optarg);
 

@@ -61,7 +61,7 @@ cal_t *convert_bwt_anchor_to_CAL(bwt_anchor_t *bwt_anchor, size_t read_start, si
 
 //------------------------------------------------------------------------------------
 
-size_t bwt_search_pair_anchors(array_list_t *list, unsigned int read_length, size_t min_cal_size, double umbral_cal_length_factor, int min_read_discard) {
+size_t bwt_search_pair_anchors(array_list_t *list, unsigned int read_length, size_t min_cal_size, double umbral_cal_length_factor, int min_read_discard, int num_max_chromosomes) {
   bwt_anchor_t *bwt_anchor;
 
   int anchor_length_tmp;
@@ -160,7 +160,7 @@ size_t bwt_search_pair_anchors(array_list_t *list, unsigned int read_length, siz
  
   if (!found_double_anchor && found_anchor) {
 		const int nstrands = 2;
-		const int nchromosomes = 30; //TODO: Parameter
+		const int nchromosomes = num_max_chromosomes; //24 for human genome
 
 		linked_list_t ***new_cals_list = (linked_list_t ***)malloc(sizeof(linked_list_t **)*nstrands);
 
@@ -545,7 +545,8 @@ int apply_bwt_bs(bwt_server_input_t* input, batch_t *batch, bwt_stage_bs_workspa
 				if (mapping_batch->mapping_lists[i]->size) {
 	  			bwt_search_pair_anchors(mapping_batch->mapping_lists[i], fq_read->length, 
 											MIN_CAL_SIZE, input->bwt_optarg_p->umbral_cal_length_factor, 
-											input->bwt_optarg_p->min_read_discard); 
+											input->bwt_optarg_p->min_read_discard,
+											input->bwt_optarg_p->max_num_chromosomes);
 				}
 
 				if (!mapping_batch->mapping_lists[i]->size) {
@@ -556,7 +557,8 @@ int apply_bwt_bs(bwt_server_input_t* input, batch_t *batch, bwt_stage_bs_workspa
 				if (mapping_batch->mapping_lists2[i]->size) {
 					bwt_search_pair_anchors(mapping_batch->mapping_lists2[i], fq_read->length, MIN_CAL_SIZE, 
 											input->bwt_optarg_p->umbral_cal_length_factor, 
-											input->bwt_optarg_p->min_read_discard); 
+											input->bwt_optarg_p->min_read_discard,
+											input->bwt_optarg_p->max_num_chromosomes);
 				}
 
 				if (!mapping_batch->mapping_lists2[i]->size) {

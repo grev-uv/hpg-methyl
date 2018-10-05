@@ -28,6 +28,11 @@ The mandatory command line options for the mode are:
   all the processing cores available in your computer platform, improving the
   performance.
 
+HPG-Methyl is preconfigured to work with human genome. In order to work with other 
+types of genome, it can be necessary to configure de number of chromosomes of the genome:
+* `--max-num-chromosomes`: Fixes the number of chromosomes of the genome. By default, 24, 
+human genome number of chromosomes (22+X+Y). The maximum value allowed is 1019.
+
 ## Burrows-Wheeler Index generation
 
 To be able to run HPG-Methyl, the index used to access the reference genome must
@@ -41,6 +46,11 @@ be stored.
 * `-r` / `--index-ratio`: Index compression ratio. Default value is 10.
 * `--bs-index`: Enable this option to create a BWT index compatible with the
   methylation status extraction process.
+
+HPG-Methyl is preconfigured to work with human genome. In order to work with other 
+types of genome, it can be necessary to configure de number of chromosomes of the genome:
+* `--max-num-chromosomes`: Fixes the number of chromosomes of the genome. By default, 24, 
+human genome number of chromosomes (22+X+Y). The maximum value allowed is 1019.
 
 
 

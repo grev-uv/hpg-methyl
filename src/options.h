@@ -36,6 +36,8 @@
 // BEGIN: Ricardo
 #define DEFAULT_UMBRAL_CAL_LENGTH_FACTOR 4
 #define DEFAULT_MIN_READ_DISCARD         100
+#define DEFAULT_MAX_CHROMOSOMES			 24
+#define DEFAULT_MAX_CHROMOSOMES_ALLOWED	 1019
 // END: Ricardo
 
 #define DEFAULT_MIN_NUM_SEEDS_IN_CAL	 -1
@@ -57,7 +59,7 @@
 #define DEFAULT_FILTER_READ_MAPPINGS_BS  100
 #define DEFAULT_FILTER_SEED_MAPPINGS_BS  500
 //=====================================================================
-#define NUM_OPTIONS			             50
+#define NUM_OPTIONS			             51
 
 typedef struct options {
   char mode[64];
@@ -119,6 +121,7 @@ typedef struct options {
   double umbral_cal_length_factor;
   int min_read_discard;
   int max_inner_gap;
+  int max_num_chromosomes;
   //RICARDO
   // new variables for bisulphite case
 } options_t;

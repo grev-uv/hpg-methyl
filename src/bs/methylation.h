@@ -254,7 +254,7 @@ void write_bs_context(metil_file_t *metil_file, bs_context_t *bs_context, size_t
 
 //====================================================================================
 
-int encode_context(char* filename, char* directory);
+int encode_context(char* filename, char* directory, int max_num_chromosomes);
 
 //====================================================================================
 

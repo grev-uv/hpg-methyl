@@ -203,7 +203,7 @@ void bwt_anchor_free(bwt_anchor_t *bwt_anchor) {
 
 bwt_optarg_t *bwt_optarg_new(const size_t num_errors, const size_t num_threads, const int filter_read_mappings, 
     const int filter_seed_mappings, const size_t min_cal_size, const double umbral_cal_length_factor,
-		const int min_read_discard, const int max_inner_gap) {
+		const int min_read_discard, const int max_inner_gap, const int max_num_chromosomes) {
   bwt_optarg_t *bwt_optarg = (bwt_optarg_t *) calloc(1, sizeof(bwt_optarg_t));
   
   bwt_optarg->num_errors = num_errors;
@@ -214,6 +214,7 @@ bwt_optarg_t *bwt_optarg_new(const size_t num_errors, const size_t num_threads, 
   bwt_optarg->umbral_cal_length_factor = umbral_cal_length_factor; //Ricardo
   bwt_optarg->min_read_discard = min_read_discard; //Ricardo
   bwt_optarg->max_inner_gap = max_inner_gap; //Ricardo
+  bwt_optarg->max_num_chromosomes = max_num_chromosomes;
 
   return bwt_optarg;
 }

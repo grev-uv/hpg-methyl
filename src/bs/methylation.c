@@ -898,12 +898,17 @@ void postprocess_bs(char *query_name, char status, size_t chromosome, size_t sta
 
 //------------------------------------------------------------------------------------
 
-int encode_context(char* filename, char* directory) {
+int encode_context(char* filename, char* directory, int max_num_chromosomes) {
   printf("Init Genome Compresion\n");
 
   FILE *f1, *f2, *f3, *f4;
   unsigned long long value, value2;
-  size_t size[50] = {0};
+  size_t *size = (size_t*)malloc(max_num_chromosomes*sizeof(size_t)); //Tamaño máximo de cromosoma 24 para humanos
+  for (int i=0;i<max_num_chromosomes;i++)
+	  size[i] = 0;
+
+
+
   size_t size2;
   int chromosome, i, cont, cont2;
   char *line1, *line2;
@@ -1117,6 +1122,7 @@ int encode_context(char* filename, char* directory) {
     free(line1);
     line1 = strdup(line2);
   }
+  printf("chromosomes = %2i, size = %10lu\n", chromosome, size[chromosome]);
 
   fprintf(f4, "%i\n", chromosome);
 
@@ -1124,6 +1130,7 @@ int encode_context(char* filename, char* directory) {
     fprintf(f4, "%lu\n", size[i]);
   }
 
+  free(size);
   free(tmp);
   free(line1);
   free(line2);

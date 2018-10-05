@@ -118,6 +118,27 @@ int main(int argc, char* argv[]) {
       // Bisulphite index generation
       printf("\nBisulphite index generation\n");
       
+      //check if reference genome file has a number of chromosomes supported
+       FILE *fd;
+       fd = fopen(options->genome_filename, "r");
+       if (fd == NULL) {  LOG_FATAL_F("Error opening file %s", options->genome_filename); }
+
+
+       char ch;
+	   int count=0;
+       while (((ch = fgetc(fd)) != EOF))
+       {
+            if (ch == '>')
+              count++;
+       }
+       fclose(fd);
+
+       if (count > options->max_num_chromosomes) {
+    	   printf("\nGenome reference File has %d chromosomes but the maximum supported is %d\n",count, options->max_num_chromosomes);
+    	   printf("Please, fix the genome reference file: %s, or increase the maximum number of chromosomes allowed\n", options->genome_filename);
+    	   exit(0);
+       }
+
       /******************************************************************************
        * 										                                    *
        * Generates the genome transform from the input and builds the index		    *
@@ -167,7 +188,7 @@ int main(int argc, char* argv[]) {
       LOG_DEBUG("ACT index Done !!\n");
       
       LOG_DEBUG("Generation of CT & GA context\n");
-      encode_context(options->genome_filename, options->bwt_dirname);
+      encode_context(options->genome_filename, options->bwt_dirname, options->max_num_chromosomes);
       LOG_DEBUG("CT & GA context Done !!\n");
 
       exit(0);
@@ -238,7 +259,8 @@ int main(int argc, char* argv[]) {
               options->min_cal_size,
               options->umbral_cal_length_factor,
               options->min_read_discard,
-              options->max_inner_gap);
+              options->max_inner_gap,
+			  options->max_num_chromosomes);
   
   // CAL parameters
   cal_optarg_t *cal_optarg = cal_optarg_new(options->min_cal_size, options->seeds_max_distance, 
