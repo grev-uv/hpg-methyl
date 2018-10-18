@@ -310,7 +310,7 @@ char* reverse_str(char *src, char *dsp, size_t length) {
 
 //-----------------------------------------------------------------------------
 
-bwt_index_t *bwt_index_new(const char *dirname) {
+bwt_index_t *bwt_index_new(const char *dirname, int max_num_chromosomes) {
 
   bwt_index_t *index = (bwt_index_t*) calloc(1, sizeof(bwt_index_t));
 
@@ -338,10 +338,10 @@ bwt_index_t *bwt_index_new(const char *dirname) {
 
   // load karyotype
   char path[strlen(dirname) + 512];
-  //  sprintf(path, "%s/index.txt", dirname);
-  //load_exome_file(&index->karyotype, path);
+
 
   load_exome_file(&index->karyotype, dirname);
+
 
   return index;
 }
@@ -367,13 +367,15 @@ void bwt_index_free(bwt_index_t *index) {
   freeCompMatrix(&index->h_Oi);
   free(index->Si.vector);
 
+//  exome_free2(&index->karyotype);
+
   free(index);
 }
 
 //-----------------------------------------------------------------------------
 
 void bwt_generate_index_files(char *ref_file, char *output_dir, 
-			      unsigned int s_ratio) {
+			      unsigned int s_ratio, int max_num_chromosomes) {
 
   byte_vector X, B, Bi;
   vector C, C1;
@@ -382,12 +384,18 @@ void bwt_generate_index_files(char *ref_file, char *output_dir,
   comp_matrix O, Oi;
 
   exome ex;
+
+
+
+
   initReplaceTable_bs(NULL);
 
   // Calculating BWT
   calculateBWT(&B, &S, &X, 0, &ex, ref_file);
 
   save_exome_file(&ex, output_dir);
+
+
 
   saveCharVector(&X, output_dir, "X");
   free(X.vector);
@@ -472,6 +480,8 @@ void bwt_generate_index_files(char *ref_file, char *output_dir,
   free(Scompi.vector);
   saveUIntCompVector(&Rcompi, output_dir, "Rcompi");
   free(Rcompi.vector);
+
+
 }
 
 //-----------------------------------------------------------------------------
@@ -512,7 +522,7 @@ void *__bwt_generate_anchor_list(size_t k_start, size_t l_start, int len_calc, b
       idx = binsearch(index->karyotype.offset, index->karyotype.size, key);
 
       if (key + len_calc <= index->karyotype.offset[idx]) {
-        start_mapping = index->karyotype.start[idx-1] + (key - index->karyotype.offset[idx-1]);	
+        start_mapping = index->karyotype.start[idx-1] + (key - index->karyotype.offset[idx-1]);
         bwt_anchor = bwt_anchor_new(!type, idx - 1, start_mapping + 1, start_mapping + len_calc, type_anchor, seq_start, seq_end);
         LOG_DEBUG_F("anchor: %i:%lu-%lu\n", idx, bwt_anchor->start, bwt_anchor->end);
         array_list_insert(bwt_anchor, anchor_list);

@@ -392,7 +392,7 @@ void** argtable_options_new(void) {
      argtable[47] = arg_dbl0(NULL, "umbral-cal-length-factor", NULL, "Cal is accepted like candidate if has been mapped more than cal_size / this factor");
      argtable[48] = arg_int0(NULL, "min-read-discard", NULL, "Discard small anchors for reads larger or equal than this value");
      argtable[49] = arg_int0(NULL, "max-inner-gap", NULL, "Recursive Burrows-Wheeler stops when inner gap is lower than this value ");
-     argtable[50] = arg_int0(NULL, "max-num-chromosomes", NULL, "Maximum number of chromosomes (default: 24, human genome chromosomes (22+X+Y), maximum accepted value 1019)");
+
 
      argtable[NUM_OPTIONS] = arg_end(20);
      
@@ -485,11 +485,6 @@ options_t *read_CLI_options(void **argtable, options_t *options) {
   //new value
   if (((struct arg_int*)argtable[49])->count) { options->max_inner_gap = *(((struct arg_int*)argtable[49])->ival); }
 
-  if (((struct arg_int*)argtable[50])->count) {
-	  options->max_num_chromosomes = *(((struct arg_int*)argtable[50])->ival);
-	  if (options->max_num_chromosomes > DEFAULT_MAX_CHROMOSOMES_ALLOWED)
-		  options->max_num_chromosomes = DEFAULT_MAX_CHROMOSOMES_ALLOWED;
-  }
 
 
   return options;

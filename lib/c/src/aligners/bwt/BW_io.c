@@ -29,6 +29,9 @@
 char init_mask[MAXLINE+1];
 char plusminus[] = "-+";
 
+
+
+
 void freeCompMatrix(comp_matrix *matrix) {
 
 for (size_t i=0; i<matrix->n_desp; i++) {
@@ -729,6 +732,7 @@ void load_exome_file(exome *ex, const char *directory) {
 
       ex->chromosome[ex->size*IDMAX+j] = '\0';
 
+
       sscanf(line + j + 2,"%u %u %*s", &ex->start[ex->size], &ex->end[ex->size]);
       //printf(">%u %s %u %u\n", ex->offset[ex->size], ex->chromosome + ex->size*IDMAX, ex->start[ex->size], ex->end[ex->size]);
       ex->size++;
@@ -737,6 +741,7 @@ void load_exome_file(exome *ex, const char *directory) {
   }
 
   fclose(fp);
+
 }
 
 void save_exome_file(exome *ex, const char *directory) {

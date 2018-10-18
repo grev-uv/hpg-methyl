@@ -61,7 +61,7 @@ char* bwt_encode_Bases(char* dest, char* src, unsigned int length, int *table) {
 //-----------------------------------------------------------------------------
 
 void bwt_generate_index_files_bs(char *ref_file, char *output_dir, 
-				 unsigned int s_ratio, char *bases) {
+				 unsigned int s_ratio, char *bases, int max_num_chromosomes) {
 
   byte_vector X, B, Bi;
   vector C, C1;
@@ -71,6 +71,8 @@ void bwt_generate_index_files_bs(char *ref_file, char *output_dir,
 
   exome ex;
 
+  //exome_new(&ex, max_num_chromosomes);
+
   initReplaceTable_bs(bases);
   saveNucleotide(bases, output_dir, "Nucleotide");
 
@@ -78,6 +80,8 @@ void bwt_generate_index_files_bs(char *ref_file, char *output_dir,
   calculateBWT(&B, &S, &X, 0, &ex, ref_file);
 
   save_exome_file(&ex, output_dir);
+
+ // exome_free(&ex);
 
   saveCharVector(&X, output_dir, "X");
   free(X.vector);

@@ -111,14 +111,14 @@ int main(int argc, char* argv[]) {
   
   if (!strcmp(command, "build-index")) {
     if (options->bs_index == 0) { // Regular index generation
-      run_index_builder(options->genome_filename, options->bwt_dirname, options->index_ratio);
+      run_index_builder(options->genome_filename, options->bwt_dirname, options->index_ratio, options->max_num_chromosomes);
       LOG_DEBUG("Done !!\n");
       exit(0);
     } else {
       // Bisulphite index generation
       printf("\nBisulphite index generation\n");
       
-      //check if reference genome file has a number of chromosomes supported
+      //reference genome number of chromosomes
        FILE *fd;
        fd = fopen(options->genome_filename, "r");
        if (fd == NULL) {  LOG_FATAL_F("Error opening file %s", options->genome_filename); }
@@ -133,11 +133,10 @@ int main(int argc, char* argv[]) {
        }
        fclose(fd);
 
-       if (count > options->max_num_chromosomes) {
-    	   printf("\nGenome reference File has %d chromosomes but the maximum supported is %d\n",count, options->max_num_chromosomes);
-    	   printf("Please, fix the genome reference file: %s, or increase the maximum number of chromosomes allowed\n", options->genome_filename);
-    	   exit(0);
-       }
+
+       printf("\nGenome reference File has %d chromosomes/contigs\n",count);
+       options->max_num_chromosomes = count + 1 ;
+
 
       /******************************************************************************
        * 										                                    *
@@ -148,7 +147,7 @@ int main(int argc, char* argv[]) {
        * 										                                    *
        ******************************************************************************/
 
-      run_index_builder(options->genome_filename, options->bwt_dirname, options->index_ratio);
+      run_index_builder(options->genome_filename, options->bwt_dirname, options->index_ratio, options->max_num_chromosomes);
 
       // Generate binary code for original genome
       char bs_dir1[256];
@@ -166,7 +165,7 @@ int main(int argc, char* argv[]) {
       system(gen1);
 
       // Generate the new index for the AGT genome file
-      run_index_builder_bs(genome_1, bs_dir1, options->index_ratio, "AGT");
+      run_index_builder_bs(genome_1, bs_dir1, options->index_ratio, "AGT", options->max_num_chromosomes);
       LOG_DEBUG("AGT index Done !!\n");
 
       LOG_DEBUG("Generation of ACT index\n");
@@ -184,7 +183,7 @@ int main(int argc, char* argv[]) {
       system(gen2);
 
       // Generate the new index for the ACT genome file
-      run_index_builder_bs(genome_2, bs_dir2, options->index_ratio, "ACT");
+      run_index_builder_bs(genome_2, bs_dir2, options->index_ratio, "ACT", options->max_num_chromosomes);
       LOG_DEBUG("ACT index Done !!\n");
       
       LOG_DEBUG("Generation of CT & GA context\n");
@@ -243,14 +242,62 @@ int main(int argc, char* argv[]) {
 
   LOG_DEBUG("Done !!");
   
+  //reference genome number of chromosomes
+
+  char path[500];
+  path[0]='\0';
+  strcat(path, bs_dir1);
+  strcat(path, "/index");
+
+  FILE *fd;
+  fd = fopen(path, "r");
+  if (fd == NULL) {  LOG_FATAL_F("Error opening file %s", options->genome_filename); }
+
+  char ch;
+  int count1=0, count2 = 0;
+  while (((ch = fgetc(fd)) != EOF))
+  {
+       if (ch == '>')
+          count1++;
+  }
+  fclose(fd);
+
+  //reference genome number of chromosomes
+
+   path[0]='\0';
+   strcat(path, bs_dir2);
+   strcat(path, "/index");
+   fd = fopen(path, "r");
+   if (fd == NULL) {  LOG_FATAL_F("Error opening file %s", options->genome_filename); }
+
+   while (((ch = fgetc(fd)) != EOF))
+   {
+        if (ch == '>')
+           count2++;
+   }
+   fclose(fd);
+
+
+
+    if (count1 > count2)
+      	  options->max_num_chromosomes = count1;
+    else
+    	  options->max_num_chromosomes = count2;
+
+    printf("\nGenome reference File has %d chromosomes/contigs\n",options->max_num_chromosomes);
+
+
+
   // BWT index
   LOG_DEBUG("Loading AGT index...");
-  bwt_index1 = bwt_index_new(bs_dir1);
+  bwt_index1 = bwt_index_new(bs_dir1,options->max_num_chromosomes);
   LOG_DEBUG("Loading AGT index done !!");
 
   LOG_DEBUG("Loading ACT index...");
-  bwt_index2 = bwt_index_new(bs_dir2);
+  bwt_index2 = bwt_index_new(bs_dir2,options->max_num_chromosomes);
   LOG_DEBUG("Loading ACT index done !!");
+
+
 
   //BWT parameters
   bwt_optarg_t *bwt_optarg = bwt_optarg_new(1, 0,

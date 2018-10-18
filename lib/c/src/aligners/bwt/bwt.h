@@ -231,16 +231,16 @@ typedef struct bwt_index {
   int rev_table[4];
 } bwt_index_t;
 
-bwt_index_t *bwt_index_new(const char *dirname);
+bwt_index_t *bwt_index_new(const char *dirname, int max_num_chromosomes);
 //void bwt_index_new(const char *dirname, bwt_index_t **index);
 void bwt_index_free(bwt_index_t *index);
 
 
 void bwt_generate_index_files(char *ref_file, char *output_dir, 
-			      unsigned int s_ratio);
+			      unsigned int s_ratio, int max_num_chromosomes);
 
 void bwt_generate_index_files_bs(char *ref_file, char *output_dir, 
-				 unsigned int s_ratio, char *bases);
+				 unsigned int s_ratio, char *bases, int max_num_chromosomes);
 
 
 //-----------------------------------------------------------------------------

@@ -40,7 +40,7 @@
 
 #define MAX_MISMATCHES  20
 
-#define INDEX_EXOME 1024
+#define INDEX_EXOME 8192
 #define IDMAX 200
 
 #define MAXLINE     200
@@ -264,13 +264,12 @@ typedef struct {
   unsigned int start[INDEX_EXOME];
   unsigned int end[INDEX_EXOME];
   unsigned int offset[INDEX_EXOME];
-  /*
-  char *chromosome;
-  unsigned int *start;
-  unsigned int *end;
-  unsigned int *offset;*/
+
   unsigned int size;
+
+
 } exome;
+
 
 typedef struct {
   size_t k, l;

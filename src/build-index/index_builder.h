@@ -9,11 +9,11 @@
 #include "aligners/bwt/genome.h"
 #include "commons/file_utils.h"
 
-void run_index_builder(char *genome_filename, char *bwt_dirname, int bwt_ratio);
+void run_index_builder(char *genome_filename, char *bwt_dirname, int bwt_ratio, int max_num_chromosomes);
 
 void help_index_builder();
 
-void run_index_builder_bs(char *genome_filename, char *bwt_dirname, int bwt_ratio, char *bases);
+void run_index_builder_bs(char *genome_filename, char *bwt_dirname, int bwt_ratio, char *bases, int max_num_chromosomes);
 
 
 #endif // INDEX_BUILDER_H

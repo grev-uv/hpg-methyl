@@ -34,7 +34,7 @@ void help_index_builder() {
 
 //------------------------------------------------------------------------------------
 
-void run_index_builder(char *genome_filename, char *bwt_dirname, int bwt_ratio) {
+void run_index_builder(char *genome_filename, char *bwt_dirname, int bwt_ratio, int max_num_chromosomes) {
 
      check_index_builder(genome_filename, bwt_dirname, bwt_ratio);
 
@@ -46,13 +46,13 @@ void run_index_builder(char *genome_filename, char *bwt_dirname, int bwt_ratio) 
      LOG_DEBUG("...done !\n");
 
      LOG_DEBUG("Building BWT index...\n");
-     bwt_generate_index_files(genome_filename, bwt_dirname, bwt_ratio);
+     bwt_generate_index_files(genome_filename, bwt_dirname, bwt_ratio, max_num_chromosomes);
      LOG_DEBUG("...done !\n");
 }
 
 //------------------------------------------------------------------------------------
 
-void run_index_builder_bs(char *genome_filename, char *bwt_dirname, int bwt_ratio, char *bases) {
+void run_index_builder_bs(char *genome_filename, char *bwt_dirname, int bwt_ratio, char *bases, int max_num_chromosomes) {
 
      printf("Index %s\n", bases);
      check_index_builder(genome_filename, bwt_dirname, bwt_ratio);
@@ -65,6 +65,6 @@ void run_index_builder_bs(char *genome_filename, char *bwt_dirname, int bwt_rati
      LOG_DEBUG("...done !\n");
 
      LOG_DEBUG("Building BWT index...\n");
-     bwt_generate_index_files_bs(genome_filename, bwt_dirname, bwt_ratio, bases);
+     bwt_generate_index_files_bs(genome_filename, bwt_dirname, bwt_ratio, bases, max_num_chromosomes);
      LOG_DEBUG("...done !\n");
 }
