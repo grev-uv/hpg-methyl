@@ -19,8 +19,8 @@ int bs_writer(void *data) {
   mapping_batch_t *mapping_batch = (mapping_batch_t *) batch->mapping_batch;
   bs_context_t *bs_context = (mapping_batch->bs_context);
 
-  // Set the sequences of the mapping to the original //RICARDO why revert? (if restore, cigar problem with hard clipping)
-  //revert_mappings_seqs(mapping_batch->mapping_lists, mapping_batch->mapping_lists2, mapping_batch->fq_batch);
+  // Set the sequences of the mapping to the original //RICARDO adapted to avoid cigar problem with hard clipping
+  revert_mappings_seqs(mapping_batch->mapping_lists, mapping_batch->mapping_lists2, mapping_batch->fq_batch);
   
   batch_writer_input_t *writer_input = batch->writer_input;
   bam_file_t *bam_file = writer_input->bam_file;     
@@ -443,6 +443,9 @@ void write_mapped_read(array_list_t *array_list, bam_file_t *bam_file) {
     LOG_DEBUG("writting bam..\n");
 
     if (alig != NULL) {
+      //Ricardo - quitar
+    	//alig->quality[0] = "\0";
+
       bam1 = convert_to_bam(alig, 33);
       bam_fwrite(bam1, bam_file);
       bam_destroy1(bam1);

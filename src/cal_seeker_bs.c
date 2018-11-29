@@ -218,7 +218,10 @@ void fill_gaps_bs(mapping_batch_t *mapping_batch, sw_optarg_t *sw_optarg,
 						gap_read_len = gap_read_end - gap_read_start + 1;
 						gap_genome_len = gap_genome_end - gap_genome_start + 1;
 
-						cal->start = gap_genome_start;
+						if ((int)gap_genome_start >0)	//cal->start must be higher than 1
+								cal->start = gap_genome_start;
+						else
+							;//RICARDO
 
 						assert(gap_read_len != 0);
 						assert(gap_genome_len != 0);

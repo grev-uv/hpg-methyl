@@ -535,7 +535,10 @@ bam1_t* convert_to_bam(alignment_t* alignment_p, int base_quality) {
     char* optional_fields;
     size_t optional_fields_length;
 
+
     optional_fields = bam_tag_list_to_string(alignment_p->optional_tags, &optional_fields_length);
+
+
 
     sequence_length = strlen(alignment_p->sequence);
 

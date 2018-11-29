@@ -568,7 +568,7 @@ void workflow_run_with(int num_threads, void *input, workflow_t *wf) {
   pthread_t threads[num_threads];
   pthread_attr_t attr;
 
-  int num_cpus = 64;
+  int num_cpus = NUM_MAX_CPUS;
   int cpuArray[num_cpus];
 
   for (int i = 0; i < num_cpus; i++) {

@@ -135,7 +135,58 @@ void revert_mappings_seqs(array_list_t **src1, array_list_t **src2, array_list_t
         free(align_tmp->sequence);
       }
 
-      align_tmp->sequence = strdup(fastq_orig->sequence);
+      if (align_tmp->num_cigar_operations > 1)	//Check for Hard clipping in order to remove bases and Soft clipping in order to restore quality
+           {
+         	  //Find hard clipping
+
+         	  int i=0;
+         	  char aux[10000], aux2[10000];
+
+         	  char operation;
+         	  int bases;
+         	  int inicio=0;
+         	  int fin = strlen(fastq_orig->sequence);
+         	  bool restore_quality = false;
+
+         	  strcpy(aux, align_tmp->cigar);
+         	  for (i=0; i<align_tmp->num_cigar_operations;i++)
+         	  {
+         		  sscanf(aux,"%d%c%s", &bases, &operation, aux2);
+         		  if (operation == 'H')	//Hard Clipping
+         		  {
+         			  if (i==0) //Hard clipping in the start of the read
+         			  {
+         				inicio = bases;
+
+         			  }
+         			  else	//Hard clipping in the end of the read
+         			  {
+         				 fin = fin - bases;
+         			  }
+         		  }
+         		  else  if (operation == 'S')	//Soft Clipping
+         		  {
+         			  restore_quality = true;
+         		  }
+
+         		  strcpy(aux,aux2);
+
+
+         	  }
+
+         	  align_tmp->sequence = strndup(fastq_orig->sequence+inicio,fin-inicio);
+         	  if (restore_quality)
+         	  {
+         		 if (align_tmp->quality != NULL) {
+         		         free(align_tmp->quality);
+         		       }
+         		 align_tmp->quality = strndup(fastq_orig->quality+inicio,fin-inicio);
+         	  }
+           }
+
+      else{
+    	        align_tmp->sequence = strdup(fastq_orig->sequence);
+      }
     }
 
     // Go over all the alignments in list 2
@@ -149,7 +200,57 @@ void revert_mappings_seqs(array_list_t **src1, array_list_t **src2, array_list_t
         free(align_tmp->sequence);
       }
 
-      align_tmp->sequence = strdup(fastq_orig->sequence);
+      if (align_tmp->num_cigar_operations > 1)	//Check for Hard clipping in order to remove bases and Soft clipping in order to restore quality
+      {
+    	  //Find hard clipping
+    	  int i=0;
+    	  char aux[10000], aux2[10000];
+
+    	  char operation;
+    	  int bases;
+    	  int inicio=0;
+    	  int fin = strlen(fastq_orig->sequence);
+    	  bool restore_quality = false;
+
+    	  strcpy(aux, align_tmp->cigar);
+    	  for (i=0; i<align_tmp->num_cigar_operations;i++)
+    	  {
+    		  sscanf(aux,"%d%c%s", &bases, &operation, aux2);
+    		  if (operation == 'H')	//Hard Clipping
+    		  {
+    			  if (i==0) //Hard clipping in the start of the read
+    			  {
+    				inicio = bases;
+
+    			  }
+    			  else	//Hard clipping in the end of the read
+    			  {
+    				 fin = fin - bases;
+    			  }
+    		  }
+    		  else  if (operation == 'S')	//Soft Clipping
+    		  {
+    			  restore_quality = true;
+    		  }
+
+    		  strcpy(aux,aux2);
+
+
+    	  }
+
+    	  align_tmp->sequence = strndup(fastq_orig->sequence+inicio,fin-inicio);
+    	  if (restore_quality)
+    	  {
+    	  	 if (align_tmp->quality != NULL) {
+    	         free(align_tmp->quality);
+    	     }
+    	  	 align_tmp->quality =  strndup(fastq_orig->quality+inicio,fin-inicio);
+    	  }
+      }
+      else
+      {
+    	  align_tmp->sequence = strdup(fastq_orig->sequence);
+      }
     }
   }
 }
