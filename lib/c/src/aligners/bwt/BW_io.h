@@ -40,7 +40,7 @@
 
 #define MAX_MISMATCHES  20
 
-#define INDEX_EXOME 8192
+#define INDEX_EXOME 8192		//8192
 #define IDMAX 200
 
 #define MAXLINE     200

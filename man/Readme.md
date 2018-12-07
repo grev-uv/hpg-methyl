@@ -28,10 +28,10 @@ The mandatory command line options for the mode are:
   all the processing cores available in your computer platform, improving the
   performance.
 
-HPG-Methyl is preconfigured to work with human genome. In order to work with other 
-types of genome, it can be necessary to configure de number of chromosomes of the genome:
-* `--max-num-chromosomes`: Fixes the number of chromosomes of the genome. By default, 24, 
-human genome number of chromosomes (22+X+Y). The maximum value allowed is 1019.
+HPG-Methyl is preconfigured to work with human genome but it works with any organism genome/contigs.
+Maximum number of genome/contigs by default is 8192, but can be increased changing the constant
+"INDEX_EXOME" at "/lib/c/src/aligners/bwt/BW_io.h"
+
 
 ## Burrows-Wheeler Index generation
 
@@ -47,11 +47,9 @@ be stored.
 * `--bs-index`: Enable this option to create a BWT index compatible with the
   methylation status extraction process.
 
-HPG-Methyl is preconfigured to work with human genome. In order to work with other 
-types of genome, it can be necessary to configure de number of chromosomes of the genome:
-* `--max-num-chromosomes`: Fixes the number of chromosomes of the genome. By default, 24, 
-human genome number of chromosomes (22+X+Y). The maximum value allowed is 1019.
-
+HPG-Methyl is preconfigured to work with human genome but it works with any organism genome/contigs.
+Maximum number of genome/contigs by default is 8192, but can be increased changing the constant
+"INDEX_EXOME" at "/lib/c/src/aligners/bwt/BW_io.h"
 
 
 ## Methylation status

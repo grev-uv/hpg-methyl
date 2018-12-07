@@ -13,7 +13,7 @@ bam_header_t *create_bam_header_by_genome(genome_t *genome) {
   bam_header->target_len = (uint32_t*) calloc(num_targets, sizeof(uint32_t));
 
   // Allocate free space to store the global methylation statistics
-  const char *header_pg = "@PG\tID:HPG-Methyl\tVN:3.1\n";
+  const char *header_pg = "@PG\tID:HPG-Methyl\tVN:3.2.4\n";
   const char *header_co = "@CO\tZM:00\tC:00000000000\n";
 
   size_t pg_len = strlen(header_pg);

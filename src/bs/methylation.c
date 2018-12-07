@@ -1066,6 +1066,13 @@ int encode_context(char* filename, char* directory, int max_num_chromosomes) {
   
   
   while (fgets(line2, 512, f1) != NULL && contador) {
+	  if (line2[0] == '\n')
+	  {
+		  char* cad = fgets(line2, 512, f1);
+		  if (cad == NULL)
+			  break;
+	  }
+
     contador--;
 
     if (line1[0] == '>') {
@@ -1090,7 +1097,7 @@ int encode_context(char* filename, char* directory, int max_num_chromosomes) {
       size2 = strlen(line1);
 
       // Value for C->T conversion
-      for (i = 0; i < size2 - 2; i++, cont++) {
+      for (i = 0; i < (int)size2 - 2; i++, cont++) {
         if (line1[i] == 'C') {
           if (line1[i + 1] == 'G') {
             value += 1;
