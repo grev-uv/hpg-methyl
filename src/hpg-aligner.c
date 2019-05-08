@@ -109,6 +109,8 @@ int main(int argc, char* argv[]) {
   validate_options(options, command);
   LOG_DEBUG_F("Command Mode: %s\n", command);
   
+
+
   if (!strcmp(command, "build-index")) {
     if (options->bs_index == 0) { // Regular index generation
       run_index_builder(options->genome_filename, options->bwt_dirname, options->index_ratio, options->max_num_chromosomes);
@@ -288,6 +290,7 @@ int main(int argc, char* argv[]) {
 
 
 
+
   // BWT index
   LOG_DEBUG("Loading AGT index...");
   bwt_index1 = bwt_index_new(bs_dir1,options->max_num_chromosomes);
@@ -359,6 +362,7 @@ int main(int argc, char* argv[]) {
   }
 
   basic_statistics_display(basic_st, 0, time_alig / 1000000, time_genome / 1000000);
+  basic_statistics_file("basicStatistics.txt",basic_st, 0, time_alig / 1000000, time_genome / 1000000);
   free(basic_st);
   options_free(options);
 

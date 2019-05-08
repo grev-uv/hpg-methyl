@@ -281,18 +281,31 @@ char *obtain_seq(alignment_t *alig, fastq_read_t * orig) {
       if (car == 'D' || car == 'N') {
 	      pos_read += num - 1;
       } else {
-        if (car == 'I' || car == 'H' || car == 'S') {
+        if (car == 'I') {
           for (cont = 0; cont < num; cont++, pos++) {
             if (pos < seq_len) {
               seq[pos] = '-';
             }
           }
         }
+        else{
+        	if (car == 'H' || car == 'S') {
+              	for (cont = 0; cont < num; cont++, pos++, pos_read++) {
+        		if (pos < seq_len) {
+        			seq[pos] = '-';
+        		}
+        	}
+        }
+        }
       }
+
     }
   }
 
-  seq[seq_len - 1] = '\0';
+  //Ricardo, sobreescribe elemento del read, con inserciones se pierde el final del genoma original, con delecciones tamaño más pequeño
+  if (pos < seq_len)
+	  seq[pos] = '\0';
+	  //  seq[seq_len - 1] = '\0';
 
   free(cigar);
   return seq;
@@ -483,7 +496,9 @@ int methylation_status_report(sw_server_input_t* input, batch_t *batch, methylat
   }
 
   // Inicializar listas para guardar datos de c's metiladas/no metiladas
+  //bs_context_t *bs_context = bs_context_new(num_reads, genome->num_chromosomes);
   bs_context_t *bs_context = bs_context_new(10000, genome->num_chromosomes);
+
   mapping_batch->bs_context = bs_context;
 
   remove_duplicates(num_reads, mapping_batch->mapping_lists, mapping_batch->mapping_lists2);
@@ -540,7 +555,15 @@ void add_metilation_status(array_list_t *array_list, bs_context_t *bs_context,
         if (workspace->add_status_seq_dup == NULL) {
           workspace->add_status_seq_dup = strdup(seq);
         } else {
-          strcpy(workspace->add_status_seq_dup, seq);
+        	if (strlen(workspace->add_status_seq_dup)== strlen(seq))
+        	{
+        		strcpy(workspace->add_status_seq_dup, seq);
+        	}
+        	else
+        	{
+        		free(workspace->add_status_seq_dup);
+        		workspace->add_status_seq_dup = strdup(seq);
+        	}
         }
 
         char *seq_dup = workspace->add_status_seq_dup;
@@ -553,6 +576,10 @@ void add_metilation_status(array_list_t *array_list, bs_context_t *bs_context,
       if (workspace->add_status_gen == NULL) {
         workspace->add_status_gen = calloc(len + 6, sizeof(char));
       }
+      else if (strlen(workspace->add_status_gen) != (len + 6)) {
+    	    free(workspace->add_status_gen);
+            workspace->add_status_gen = calloc(len + 6, sizeof(char));
+          }
 
       gen = workspace->add_status_gen;
 

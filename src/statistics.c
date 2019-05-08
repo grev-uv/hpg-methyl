@@ -36,6 +36,46 @@ void basic_statistics_display(basic_statistics_t *statistics, int rna_mode, floa
 
 }
 
+
+void basic_statistics_file(char* filename, basic_statistics_t *statistics, int rna_mode, float alig_time, float load_time) {
+
+  FILE *stats_file = fopen(filename,  "w");
+
+
+  size_t total_reads = statistics->total_reads;
+  size_t num_mapped_reads = statistics->num_mapped_reads;
+  size_t total_mappings = statistics->total_mappings;
+
+  size_t total_sp = statistics->total_sp;
+  size_t uniq_sp = statistics->uniq_sp;
+
+  fprintf(stats_file,"+--------------------------------------------------------------------------------------+\n");
+  fprintf(stats_file,"|                                     GLOBAL STATISTICS                                |\n");
+  fprintf(stats_file,"+--------------------------------------------------------------------------------------+\n");
+  fprintf(stats_file,"| Loading Time (s)  : %-65.2f", load_time);
+  fprintf(stats_file,"|\n");
+  fprintf(stats_file,"| Alignment Time (s): %-65.2f", alig_time);
+  fprintf(stats_file,"|\n");
+  fprintf(stats_file,"| Total Time (s)    : %-65.2f", load_time + alig_time);
+  fprintf(stats_file,"|\n");
+  fprintf(stats_file,"========================================================================================\n");
+  fprintf(stats_file,"| Total Reads Processed: %-62llu", total_reads);
+  fprintf(stats_file,"|\n");
+  fprintf(stats_file,"+-------------------------------------------+------------------------------------------+\n");
+  fprintf(stats_file,"| Reads Mapped: %-18llu  %6.2f", num_mapped_reads, num_mapped_reads * 100.0 / total_reads);
+  fprintf(stats_file,"% | ");
+  fprintf(stats_file," Reads Unmapped: %-14llu  %6.2f", total_reads - num_mapped_reads, (total_reads - num_mapped_reads) * 100.0 / total_reads);
+  fprintf(stats_file,"%  |\n");
+  if (rna_mode) {
+    fprintf(stats_file,"+-------------------------------------------+------------------------------------------+\n");
+  } else {
+    fprintf(stats_file,"+-------------------------------------------+------------------------------------------+\n");
+  }
+
+  fclose(stats_file);
+
+}
+
 //------------------------------------------------------------------------------------------
 
 basic_statistics_t *basic_statistics_new() {

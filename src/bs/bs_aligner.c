@@ -155,7 +155,7 @@ void run_bs_aligner(genome_t *genome2, genome_t *genome1, genome_t *genome,
 
   // Aquí es donde se lanza el workflow, comenzando la creación del fichero alignments.bam
   start_timer(time_start_alig);
-  workflow_run_with(options->num_cpu_threads, wf_input, wf);  
+  workflow_run_with(options->num_cpu_threads, wf_input, wf);
   stop_timer(time_start_alig, time_end_alig, time_alig);
 
   // Log elapsed time

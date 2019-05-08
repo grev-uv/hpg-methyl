@@ -39,6 +39,7 @@ extern statistics_t *statistics_p;
 extern basic_statistics_t *basic_st;
 
 void basic_statistics_display(basic_statistics_t *statistics, int rna_mode, float alig_time, float load_time);
+void basic_statistics_file(char* filename, basic_statistics_t *statistics, int rna_mode, float alig_time, float load_time);
 
 void basic_statistics_add(size_t total_reads, size_t num_mapped_reads, size_t total_mappings, basic_statistics_t *basic);
 
