@@ -18,6 +18,8 @@ HPG-Methyl requires a working installation of GCC 4.9.2+, SCons and the followin
 
 | Library | Ubuntu / Debian | Red Hat / Fedora / Centos |
 |:-------:|:---------------:|:-------------------------:|
+| GNU C Toolchain     | build-essential | make / automake / gcc |
+| SConstruct    | scons      | scons                    |
 | ZLib    | zlib1g-dev      | zlib-devel                |
 | Curl    | libcurl4-gnutls-dev | libcurl-devel         |
 | libxml  | libxml2-dev     | libxml2-devel             |
