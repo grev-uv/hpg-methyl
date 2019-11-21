@@ -136,6 +136,8 @@ And in the file [src/pair_server.h](src/pair_server.h#L60) the lines 60, 61, 68 
 ```
 Finally, it can compile following the steps showed at Building section.
 
+If you find any other bugs, issues, want a specific feature added or need help, feel free to add an issue or extend an existing one. Pull requests are welcome.
+
 # Contact
 
 Contact any of the following developers for any enquiry:
