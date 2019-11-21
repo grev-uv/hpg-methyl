@@ -14,7 +14,7 @@ There is a binary package for Linux x86_64 systems. This compiled file is availa
 
 # Building
 
-In the [release section](../../releases) of the repository there is a binary package for Linux x86_64 systems. If you are interested in modifying, extending or debugging the software, the following instructions show how to build HPG-Methyl. To be able to build the software, HPG-Methyl requires a working installation of GCC 4.9.2+ and the following packages:
+If you are interested in modifying, extending or debugging the software, the following instructions show how to build HPG-Methyl. To be able to build the software, HPG-Methyl requires a working installation of GCC 4.9.2+ and the following packages:
 
 | Library | Ubuntu / Debian | Red Hat / Fedora / Centos |
 |:-------:|:---------------:|:-------------------------:|
