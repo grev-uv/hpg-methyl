@@ -63,7 +63,7 @@ Or to map the reads and extract the methylation context status simultaneously:
 $ hpg-methyl bs -i <index-directory> -f <fastq-file-path> -o <output-directory> --cpu-threads <thread-count> --write-mcontext
 ```
 
-
+If the mapping tool [hmapper](https://github.com/grev-uv/hpg-hmapper) is going to be used afterwards, then the option --write-context is highly recommended.
 
 # Example datasets
 
