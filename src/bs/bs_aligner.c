@@ -155,7 +155,7 @@ void run_bs_aligner(genome_t *genome2, genome_t *genome1, genome_t *genome,
 
   // Aquí es donde se lanza el workflow, comenzando la creación del fichero alignments.bam
   start_timer(time_start_alig);
-  workflow_run_with(options->num_cpu_threads, wf_input, wf);
+  workflow_run_with(options->num_cpu_threads, wf_input, wf);  
   stop_timer(time_start_alig, time_end_alig, time_alig);
 
   // Log elapsed time
@@ -219,7 +219,8 @@ void run_bs_aligner(genome_t *genome2, genome_t *genome1, genome_t *genome,
     metil_file->MUT_methyl +
     metil_file->CpG_methyl + metil_file->CpG_unmethyl +
     metil_file->CHG_methyl + metil_file->CHG_unmethyl +
-    metil_file->CHH_methyl + metil_file->CHH_unmethyl;
+    metil_file->CHH_methyl + metil_file->CHH_unmethyl +
+	metil_file->CUN_methyl + metil_file->CUN_unmethyl;
 
   // Same data as Bismark
   printf("\n\n");
@@ -231,10 +232,12 @@ void run_bs_aligner(genome_t *genome2, genome_t *genome1, genome_t *genome,
   printf("Total methylated C's in CpG context: %lu\n", metil_file->CpG_methyl);
   printf("Total methylated C's in CHG context: %lu\n", metil_file->CHG_methyl);
   printf("Total methylated C's in CHH context: %lu\n", metil_file->CHH_methyl);
+  printf("Total methylated C's in Unknown context: %lu\n", metil_file->CUN_methyl);
   printf("\n");
   printf("Total C to T conversions in CpG context: %lu\n", metil_file->CpG_unmethyl);
   printf("Total C to T conversions in CHG context: %lu\n", metil_file->CHG_unmethyl);
   printf("Total C to T conversions in CHH context: %lu\n", metil_file->CHH_unmethyl);
+  printf("Total C to T conversions in Unknown context: %lu\n", metil_file->CUN_unmethyl);
 
   printf("\n");
   printf("C methylated in CpG context: %5.2f%c\n", (metil_file->CpG_methyl + metil_file->CpG_unmethyl == 0) ? 0.0 :
@@ -243,6 +246,8 @@ void run_bs_aligner(genome_t *genome2, genome_t *genome1, genome_t *genome,
 	 (float) metil_file->CHG_methyl / (metil_file->CHG_methyl + metil_file->CHG_unmethyl)  * 100, '%');
   printf("C methylated in CHH context: %5.2f%c\n", (metil_file->CHH_methyl + metil_file->CHH_unmethyl == 0) ? 0.0 :
 	 (float) metil_file->CHH_methyl / (metil_file->CHH_methyl + metil_file->CHH_unmethyl)  * 100, '%');
+  printf("C methylated in Unknown context: %5.2f%c\n", (metil_file->CUN_methyl + metil_file->CUN_unmethyl == 0) ? 0.0 :
+ 	 (float) metil_file->CUN_methyl / (metil_file->CUN_methyl + metil_file->CUN_unmethyl)  * 100, '%');
 
   fprintf(STAT, "\n\n");
   fprintf(STAT, "======================================\n");
@@ -253,10 +258,12 @@ void run_bs_aligner(genome_t *genome2, genome_t *genome1, genome_t *genome,
   fprintf(STAT, "Total methylated C's in CpG context: %lu\n", metil_file->CpG_methyl);
   fprintf(STAT, "Total methylated C's in CHG context: %lu\n", metil_file->CHG_methyl);
   fprintf(STAT, "Total methylated C's in CHH context: %lu\n", metil_file->CHH_methyl);
+  fprintf(STAT, "Total methylated C's in Unknown context: %lu\n", metil_file->CUN_methyl);
   fprintf(STAT, "\n");
   fprintf(STAT, "Total C to T conversions in CpG context: %lu\n", metil_file->CpG_unmethyl);
   fprintf(STAT, "Total C to T conversions in CHG context: %lu\n", metil_file->CHG_unmethyl);
   fprintf(STAT, "Total C to T conversions in CHH context: %lu\n", metil_file->CHH_unmethyl);
+  fprintf(STAT, "Total C to T conversions in Unknown context: %lu\n", metil_file->CUN_unmethyl);
 
   fprintf(STAT, "\n");
   fprintf(STAT, "C methylated in CpG context: %5.2f%c\n", (metil_file->CpG_methyl + metil_file->CpG_unmethyl == 0) ? 0.0 :
@@ -265,6 +272,8 @@ void run_bs_aligner(genome_t *genome2, genome_t *genome1, genome_t *genome,
 	  (float) metil_file->CHG_methyl / (metil_file->CHG_methyl + metil_file->CHG_unmethyl)  * 100, '%');
   fprintf(STAT, "C methylated in CHH context: %5.2f%c\n", (metil_file->CHH_methyl + metil_file->CHH_unmethyl == 0) ? 0.0 :
 	  (float) metil_file->CHH_methyl / (metil_file->CHH_methyl + metil_file->CHH_unmethyl)  * 100, '%');
+  fprintf(STAT, "C methylated in Unknown context: %5.2f%c\n", (metil_file->CUN_methyl + metil_file->CUN_unmethyl == 0) ? 0.0 :
+  	  (float) metil_file->CUN_methyl / (metil_file->CUN_methyl + metil_file->CUN_unmethyl)  * 100, '%');
 
   metil_file_free(metil_file);
 

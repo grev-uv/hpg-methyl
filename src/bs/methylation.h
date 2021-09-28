@@ -79,6 +79,8 @@ typedef struct metil_file {
   size_t CHH_methyl;                 /**< Global Counter for methylated Cytosines in CHH context   */
   size_t CHH_unmethyl;               /**< Global Counter for unmethylated Cytosines in CHH context */
   size_t MUT_methyl;                 /**< Global Counter for mutated Cytosines                     */
+  size_t CUN_methyl;				 /**< Global Counter for Unknown context (CN or CHN) - methylated */ //RICARDO
+  size_t CUN_unmethyl;				 /**< Global Counter for Unknown context (CN or CHN) - unmethylated */ //RICARDO
   size_t num_bases;                  /**< Global Counter for number of bases in the batch          */
 
   uint32_t *methyl_reads;            /**< Array with the number of methylated reads per chromosome */
