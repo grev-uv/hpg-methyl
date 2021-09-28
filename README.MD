@@ -106,7 +106,7 @@ Firstly, check the distibution and release of the Operating System:
 $ lsb_release -a
 ```
 
-If the OS is Ubuntu 18.04, some changes are needed to compile properly:
+If the OS is Ubuntu 18.04 or 20.04, some changes are needed to compile properly:
 
 In the file [lib/third_party/config/libconfig.c](src/pair_server.h#L37), the line 37 must be commented
 
