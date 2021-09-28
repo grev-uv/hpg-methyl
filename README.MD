@@ -13,7 +13,7 @@ This read-me file contains a short guide to get started quickly with HPG-Methyl.
 
 # Building
 
-**Be careful**. If the distribution and release of the OS is Ubuntu 18.04, please, take a look at Issues section before compile.
+**Be careful**. If the distribution and release of the OS is Ubuntu 18.04 or 20.04, please, take a look at Issues section before compile.
 
 If you are interested in modifying, extending or debugging the software, the following instructions show how to build HPG-Methyl. To be able to build the software, HPG-Methyl requires a working installation of GCC 4.9.2+ and the following packages:
 
