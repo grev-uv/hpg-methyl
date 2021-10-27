@@ -303,13 +303,13 @@ char *obtain_seq(alignment_t *alig, fastq_read_t * orig) {
 
 //------------------------------------------------------------------------------------
 
-char *obtain_seq_met(alignment_t *alig, fastq_read_t * orig) {
+char *obtain_seq_met(alignment_t *alig, char * orig) {
   int cont, pos = 0, pos_read = 0, num, operations;
   int offset = 0, current_offset = 0;
-  int seq_len = orig->length;
+  int seq_len = strlen(orig);
   char car;
 
-  char *read = orig->sequence;
+  char *read = orig;
   char *cigar = strdup(alig->cigar);
   char *seq = (char *)calloc(2*seq_len, sizeof(char));//RICARDO *2, para posibles deleciones //Liberar Memoria???
   //char *seq = (char *)calloc(seq_len, sizeof(char));
@@ -328,7 +328,7 @@ char *obtain_seq_met(alignment_t *alig, fastq_read_t * orig) {
       }
     } else {
       if (car == 'D' || car == 'N') {
-	      pos_read += num - 1;
+	      //pos_read += num - 1;
     	  delec+=num;
     	  for (cont = 0; cont < num; cont++, pos++) {
     	    if (pos < (seq_len + delec)) {
@@ -336,19 +336,38 @@ char *obtain_seq_met(alignment_t *alig, fastq_read_t * orig) {
     	    }
     	  }
       } else {
-        if (car == 'I' || car == 'H' || car == 'S') {
+        if (car == 'I') {
           for (cont = 0; cont < num; cont++, pos++, pos_read++) {
             if (pos < (seq_len + delec)) {
               seq[pos] = '-';
             }
           }
         }
+        else{
+        	if (car == 'H' || car == 'S') {		//En la read resultado aparecerán los S, los marco, los H los quito porque no aparecerán
+
+        			pos_read+=num;
+        			if (car == 'S'){
+        				for (cont = 0; cont < num; cont++, pos++) {
+        	                    if (pos < (seq_len + delec)) {
+        	                      seq[pos] = 'S';
+        	                    }
+        	                  }
+        			}
+        	    }
+
+
+        }	////H = no se incluye en la secuencia, no hago nada
       }
     }
   }
 
   //seq[seq_len - 1] = '\0';	//RICARDO
-  seq[seq_len+delec] = '\0';	//RICARDO
+  //seq[seq_len+delec] = '\0';	//RICARDO
+  if (seq[pos-1]=='\r')
+    seq[pos-1] = '\0';	//RICARDO
+  else
+	seq[pos] = '\0';
 
   free(cigar);
   return seq;
@@ -583,7 +602,7 @@ void add_metilation_status(array_list_t *array_list, bs_context_t *bs_context,
   alignment_t *alig;
   fastq_read_t *orig;
 
-  char *seq, *gen;
+  char *seq, *gen, *seq_aux;
   
   int new_strand;
   int write_file = 1;
@@ -594,22 +613,38 @@ void add_metilation_status(array_list_t *array_list, bs_context_t *bs_context,
     alig = (alignment_t *) array_list_get(j, array_list);
 
     if (alig != NULL && alig->is_seq_mapped) {
-      //seq = obtain_seq(alig, orig);
-    	seq = obtain_seq_met(alig, orig);
 
-      /*if (alig->seq_strand == 1) {
+
+
+
+    	len = orig->length; //original
+    	//seq = obtain_seq(alig, orig);
+    	//seq = obtain_seq_met(alig, orig);
+    	//len = strlen(seq); 	//Puede haber cambiado la longitud respecto a la original
+
+    	seq_aux = strdup(orig->sequence);
+
+      if (alig->seq_strand == 1) {
         if (workspace->add_status_seq_dup == NULL) {
-          workspace->add_status_seq_dup = strdup(seq);
+          workspace->add_status_seq_dup = strdup(orig->sequence);
         } else {
-          strcpy(workspace->add_status_seq_dup, seq);
+          free(workspace->add_status_seq_dup);
+          workspace->add_status_seq_dup = strdup(orig->sequence);
+          //strcpy(workspace->add_status_seq_dup, seq);
         }
 
         char *seq_dup = workspace->add_status_seq_dup;
-        rev_comp(seq_dup, seq, orig->length);
-      }*/
+        rev_comp(seq_dup, seq_aux, len);
+      }
+
+      seq = obtain_seq_met(alig, seq_aux);
+      len = strlen(seq); 	//Puede haber cambiado la longitud respecto a la original
+      free(seq_aux);
 
       // Increase the counter number of bases
-      len = orig->length;
+      //len = orig->length; //original
+
+
 
       if (workspace->add_status_gen == NULL) {
         workspace->add_status_gen = calloc(2*len + 6, sizeof(char));
@@ -619,15 +654,16 @@ void add_metilation_status(array_list_t *array_list, bs_context_t *bs_context,
 
       start = alig->position + 1;
       end = start + len + 4;
-
+      int inc = 0;
 
       //RICARDO - Modificado para tener gen de referencia a la izquierda (cogemos +2 a la izquierda) y *2 por si hay delecciones
           if (start-2 >0){
         	  start = start-2;
         	  end = start + 2*len + 4;
+        	  inc = 2;
           }
           else{
-        	  int k=0;
+        	  inc = 0;
           }
 
       if (end >= genome->chr_size[alig->chromosome]) {
@@ -638,7 +674,7 @@ void add_metilation_status(array_list_t *array_list, bs_context_t *bs_context,
 
       // Initialize the auxiliary tag data for the alignment
       bam_tag_t *tag_zm = bam_tag_init(ZM_TAG_NAME, BAM_TAG_TYPE_INT, 0, 0);
-      bam_tag_t *tag_xm = bam_tag_init(XM_TAG_NAME, BAM_TAG_TYPE_STRING, 0, len);
+      bam_tag_t *tag_xm = bam_tag_init(XM_TAG_NAME, BAM_TAG_TYPE_STRING, 0, 2*len);		//RICARDO *2
       bam_tag_t *tag_xg = bam_tag_init(XG_TAG_NAME, BAM_TAG_TYPE_STRING, 0, 2);
       bam_tag_t *tag_xr = bam_tag_init(XR_TAG_NAME, BAM_TAG_TYPE_STRING, 0, 2);
 
@@ -655,9 +691,9 @@ void add_metilation_status(array_list_t *array_list, bs_context_t *bs_context,
       int i_seq = 0; //RICARDO -Para gestionar inserciones y deleciones, indice de secuencia
       int i_gen = 0; //RICARDO -Para gestionar inserciones y deleciones, indice de gen referencia
       //size_t i = 0; //RICARDO -Para gestionar inserciones y deleciones, indice de longitud
-      int i_delec = 0;//RICARDO - Para contar las deleciones
+      //int i_delec = 0;//RICARDO - Para contar las deleciones
 
-      while (i_seq < (len+i_delec)) {
+      while (i_seq < (len)) {
 
          	  //RICARDO - Inserciones
          	  if (seq[i_seq] == '-'){
@@ -665,11 +701,15 @@ void add_metilation_status(array_list_t *array_list, bs_context_t *bs_context,
          		  bam_tag_str_append(tag_xm, XM_NON_RELEVANT);
 
          	  }
+         	  else if (seq[i_seq] == 'S'){	// Soft clipping, no se tiene en cuenta para la posición del mapeo, pero sí que va a aparecer en la read resultado
+         		  i_seq++;
+         		  bam_tag_str_append(tag_xm, XM_NON_RELEVANT);	//Marcamos como no relevante para que concuerde la longitud con la de la read
+         	  }
          	  //Delecciones
          	  else if (seq[i_seq] == 'D'){
          	      		  i_seq++;
          	      		  i_gen++;
-         	      		  i_delec++;
+         	      		  //i_delec++;
 
          	      	  }
 
@@ -677,11 +717,11 @@ void add_metilation_status(array_list_t *array_list, bs_context_t *bs_context,
 
              if ((conversion == 1 && alig->seq_strand == 0) || (conversion == 0 && alig->seq_strand == 1)) {
                // Methylated/unmethylated cytosines are located in the same strand as the alignment
-               if (gen[i_gen+2] == 'C') {		//Ricardo + 2
-                 if (gen[i_gen + 3] == 'G') {	//Ricardo + 2
+               if (gen[i_gen+inc] == 'C') {		//Ricardo + 2
+                 if (gen[i_gen + 1 +inc] == 'G') {	//Ricardo + 2
                    if (seq[i_seq] == 'C') {
                      if (write_file == 1) {
-                       postprocess_bs(alig->query_name, '+', alig->chromosome, start + i_seq + 2 - i_delec, XM_METHYLATED_CPG, alig->seq_strand, 0, bs_context->context_CpG);//Ricardo + 2
+                       postprocess_bs(alig->query_name, '+', alig->chromosome, start + i_gen + inc, XM_METHYLATED_CPG, alig->seq_strand, 0, bs_context->context_CpG);//Ricardo + 2
 
                        // Update the alignment methylation tag
                        bam_tag_str_append(tag_xm, XM_METHYLATED_CPG);
@@ -691,7 +731,7 @@ void add_metilation_status(array_list_t *array_list, bs_context_t *bs_context,
                      bs_context->CpG_methyl++;
                    } else /*if (seq[i_seq] == 'T') */{
                      if (write_file == 1) {
-                       postprocess_bs(alig->query_name, '-', alig->chromosome, start + i_seq + 2 - i_delec, XM_UNMETHYLATED_CPG, alig->seq_strand, 0,bs_context->context_CpG);//Ricardo + 2
+                       postprocess_bs(alig->query_name, '-', alig->chromosome, start + i_gen + inc, XM_UNMETHYLATED_CPG, alig->seq_strand, 0,bs_context->context_CpG);//Ricardo + 2
 
                        // Update the alignment methylation tag
                        bam_tag_str_append(tag_xm, XM_UNMETHYLATED_CPG);
@@ -701,7 +741,7 @@ void add_metilation_status(array_list_t *array_list, bs_context_t *bs_context,
                    } /*else {//Mutation, Bismark discard it
 
                      if (write_file == 1) {
-                       postprocess_bs(alig->query_name, '.', alig->chromosome, start + i_seq + 2 - i_delec, XM_METHYLATED_MUT, alig->seq_strand, 3,bs_context->context_MUT);//Ricardo + 2
+                       postprocess_bs(alig->query_name, '.', alig->chromosome, start + i_seq + inc - i_delec, XM_METHYLATED_MUT, alig->seq_strand, 3,bs_context->context_MUT);//Ricardo + 2
 
                        // Update the alignment methylation tag
                        bam_tag_str_append(tag_xm, XM_METHYLATED_MUT);
@@ -712,11 +752,11 @@ void add_metilation_status(array_list_t *array_list, bs_context_t *bs_context,
                  	//bam_tag_str_append(tag_xm, XM_NON_RELEVANT); //skip like bismark
                    }*/
                  } else {
-                   if (gen[i_gen + 4] == 'G') { //Ricardo + 2
+                   if (gen[i_gen + 2 + inc] == 'G') { //Ricardo + 2
                      if (seq[i_seq] == 'C') {
                      	if (((i_seq-1 >= 0)&&(seq[i_seq-1]!='D')) && ((i_seq-2 >= 0)&&(seq[i_seq-2]!='D'))){
                        if (write_file == 1) {
-                         postprocess_bs(alig->query_name, '+', alig->chromosome, start + i_seq + 2 - i_delec, XM_METHYLATED_CHG, alig->seq_strand, 1,bs_context->context_CHG);//Ricardo + 2
+                         postprocess_bs(alig->query_name, '+', alig->chromosome, start + i_gen + inc, XM_METHYLATED_CHG, alig->seq_strand, 1,bs_context->context_CHG);//Ricardo + 2
 
                          // Update the alignment methylation tag
                          bam_tag_str_append(tag_xm, XM_METHYLATED_CHG);
@@ -727,7 +767,7 @@ void add_metilation_status(array_list_t *array_list, bs_context_t *bs_context,
                       }
                      	else{
                      		 if (write_file == 1) {
-                     		      postprocess_bs(alig->query_name, '+', alig->chromosome, start + i_seq + 2 - i_delec, XM_METHYLATED_CHH, alig->seq_strand, 2,bs_context->context_CHH);//Ricardo + 2
+                     		      postprocess_bs(alig->query_name, '+', alig->chromosome, start + i_gen + inc, XM_METHYLATED_CHH, alig->seq_strand, 2,bs_context->context_CHH);//Ricardo + 2
 
                      		      // Update the alignment methylation tag
                      		      bam_tag_str_append(tag_xm, XM_METHYLATED_CHH);
@@ -740,7 +780,7 @@ void add_metilation_status(array_list_t *array_list, bs_context_t *bs_context,
                      } else /*if (seq[i_seq] == 'T')*/ {
                      	if (((i_seq-1 >= 0)&&(seq[i_seq-1]!='D')) && ((i_seq-2 >= 0)&&(seq[i_seq-2]!='D'))){
                        if (write_file == 1) {
-                         postprocess_bs(alig->query_name, '-', alig->chromosome, start + i_seq + 2 - i_delec, XM_UNMETHYLATED_CHG, alig->seq_strand, 1,bs_context->context_CHG);//Ricardo + 2
+                         postprocess_bs(alig->query_name, '-', alig->chromosome, start + i_gen + inc, XM_UNMETHYLATED_CHG, alig->seq_strand, 1,bs_context->context_CHG);//Ricardo + 2
 
                          // Update the alignment methylation tag
                          bam_tag_str_append(tag_xm, XM_UNMETHYLATED_CHG);
@@ -750,7 +790,7 @@ void add_metilation_status(array_list_t *array_list, bs_context_t *bs_context,
                      }
                      	else{
                      		 if (write_file == 1) {
-     							postprocess_bs(alig->query_name, '-', alig->chromosome, start + i_seq + 2 - i_delec, XM_UNMETHYLATED_CHH, alig->seq_strand, 2,bs_context->context_CHH);//Ricardo + 2
+     							postprocess_bs(alig->query_name, '-', alig->chromosome, start + i_gen + inc, XM_UNMETHYLATED_CHH, alig->seq_strand, 2,bs_context->context_CHH);//Ricardo + 2
 
      							// Update the alignment methylation tag
      							bam_tag_str_append(tag_xm, XM_UNMETHYLATED_CHH);
@@ -776,7 +816,7 @@ void add_metilation_status(array_list_t *array_list, bs_context_t *bs_context,
                    } else {
                      if (seq[i_seq] == 'C') {
                        if (write_file == 1) {
-                         postprocess_bs(alig->query_name, '+', alig->chromosome, start + i_seq + 2 - i_delec, XM_METHYLATED_CHH, alig->seq_strand, 2,bs_context->context_CHH);//Ricardo + 2
+                         postprocess_bs(alig->query_name, '+', alig->chromosome, start + i_gen + inc, XM_METHYLATED_CHH, alig->seq_strand, 2,bs_context->context_CHH);//Ricardo + 2
 
                          // Update the alignment methylation tag
                          bam_tag_str_append(tag_xm, XM_METHYLATED_CHH);
@@ -786,7 +826,7 @@ void add_metilation_status(array_list_t *array_list, bs_context_t *bs_context,
                        bs_context->CHH_methyl++;
                      } else /*if (seq[i_seq] == 'T')*/ {
                        if (write_file == 1) {
-                         postprocess_bs(alig->query_name, '-', alig->chromosome, start + i_seq + 2 - i_delec, XM_UNMETHYLATED_CHH, alig->seq_strand, 2,bs_context->context_CHH);//Ricardo + 2
+                         postprocess_bs(alig->query_name, '-', alig->chromosome, start + i_gen + inc, XM_UNMETHYLATED_CHH, alig->seq_strand, 2,bs_context->context_CHH);//Ricardo + 2
 
                          // Update the alignment methylation tag
                          bam_tag_str_append(tag_xm, XM_UNMETHYLATED_CHH);
@@ -797,7 +837,7 @@ void add_metilation_status(array_list_t *array_list, bs_context_t *bs_context,
                      	//Mutation, Bismark discard it
 
                        if (write_file == 1) {
-                         postprocess_bs(alig->query_name, '.', alig->chromosome, start + i_seq + 2 - i_delec, XM_METHYLATED_MUT, alig->seq_strand, 3,bs_context->context_MUT);//Ricardo + 2
+                         postprocess_bs(alig->query_name, '.', alig->chromosome, start + i_seq + inc - i_delec, XM_METHYLATED_MUT, alig->seq_strand, 3,bs_context->context_MUT);//Ricardo + 2
 
                          // Update the alignment methylation tag
                          bam_tag_str_append(tag_xm, XM_METHYLATED_MUT);
@@ -822,11 +862,11 @@ void add_metilation_status(array_list_t *array_list, bs_context_t *bs_context,
                  new_strand = 0;
                }
 
-               if (gen[i_gen+2] == 'G') {
+               if (gen[i_gen+inc] == 'G') {
              	if ( ((i_seq-1>=0) && (seq[i_seq-1]=='-')) || ((i_seq-2>=0) && (seq[i_seq-2]=='-'))){ //Inserciones ponemos CUN (unknown)
              		if (seq[i_seq] == 'G') {
              			if (write_file == 1) {
-             			      postprocess_bs(alig->query_name, '.', alig->chromosome, start + i_seq + 2 - i_delec, XM_METHYLATED_CUN, alig->seq_strand, 3,bs_context->context_CUN);//Ricardo + 2
+             			      postprocess_bs(alig->query_name, '.', alig->chromosome, start + i_gen + inc, XM_METHYLATED_CUN, alig->seq_strand, 3,bs_context->context_CUN);//Ricardo + 2
 
              			      // Update the alignment methylation tag
              			      bam_tag_str_append(tag_xm, XM_METHYLATED_CUN);
@@ -837,7 +877,7 @@ void add_metilation_status(array_list_t *array_list, bs_context_t *bs_context,
              		}
              		else{
              			if (write_file == 1) {
-             			     postprocess_bs(alig->query_name, '.', alig->chromosome, start + i_seq + 2 - i_delec, XM_UNMETHYLATED_CUN, alig->seq_strand, 3,bs_context->context_CUN);//Ricardo + 2
+             			     postprocess_bs(alig->query_name, '.', alig->chromosome, start + i_gen + inc, XM_UNMETHYLATED_CUN, alig->seq_strand, 3,bs_context->context_CUN);//Ricardo + 2
 
              			     // Update the alignment methylation tag
              			     bam_tag_str_append(tag_xm, XM_UNMETHYLATED_CUN);
@@ -850,10 +890,10 @@ void add_metilation_status(array_list_t *array_list, bs_context_t *bs_context,
              	  }
              	else{
 
-                 if (gen[i_gen + 1] == 'C') {
+                 if ((i_gen + inc - 1 >= 0) && (gen[i_gen + inc - 1] == 'C')) {
                    if (seq[i_seq] == 'G') {
                      if (write_file == 1) {
-                       postprocess_bs(alig->query_name, '+', alig->chromosome, start + i_seq + 2 - i_delec, XM_METHYLATED_CPG, new_strand, 0,bs_context->context_CpG);//Ricardo + 2
+                       postprocess_bs(alig->query_name, '+', alig->chromosome, start + i_gen + inc, XM_METHYLATED_CPG, new_strand, 0,bs_context->context_CpG);//Ricardo + 2
 
                        // Update the alignment methylation tag
                        bam_tag_str_append(tag_xm, XM_METHYLATED_CPG);
@@ -863,7 +903,7 @@ void add_metilation_status(array_list_t *array_list, bs_context_t *bs_context,
                      bs_context->CpG_methyl++;
                    } else /*if (seq[i_seq] == 'A')*/ {
                      if (write_file == 1) {
-                       postprocess_bs(alig->query_name, '-', alig->chromosome, start + i_seq + 2 - i_delec, XM_UNMETHYLATED_CPG, new_strand, 0,bs_context->context_CpG);//Ricardo + 2
+                       postprocess_bs(alig->query_name, '-', alig->chromosome, start + i_gen + inc, XM_UNMETHYLATED_CPG, new_strand, 0,bs_context->context_CpG);//Ricardo + 2
 
                        // Update the alignment methylation tag
                        bam_tag_str_append(tag_xm, XM_UNMETHYLATED_CPG);
@@ -873,7 +913,7 @@ void add_metilation_status(array_list_t *array_list, bs_context_t *bs_context,
                    } /*else {
                  	  //Mutation, Bismark discard it
                  	  if (write_file == 1) {
-                       postprocess_bs(alig->query_name, '.', alig->chromosome, start + i_seq + 2 - i_delec, XM_METHYLATED_MUT, alig->seq_strand, 3,bs_context->context_MUT);//Ricardo + 2
+                       postprocess_bs(alig->query_name, '.', alig->chromosome, start + i_seq + inc - i_delec, XM_METHYLATED_MUT, alig->seq_strand, 3,bs_context->context_MUT);//Ricardo + 2
 
                        // Update the alignment methylation tag
                        bam_tag_str_append(tag_xm, XM_METHYLATED_MUT);
@@ -884,12 +924,12 @@ void add_metilation_status(array_list_t *array_list, bs_context_t *bs_context,
                  	//  bam_tag_str_append(tag_xm, XM_NON_RELEVANT); //skip like bismark
                    }*/
                  } else {
-                   if (gen[i_gen] == 'C') {
+                   if ((i_gen + inc -2 >= 0) && (gen[i_gen + inc -2] == 'C')) {
                      if (seq[i_seq] == 'G') {
                      	if (((i_seq-1 >= 0)&&(seq[i_seq-1]!='D')) && ((i_seq-2 >= 0)&&(seq[i_seq-2]!='D'))){
 
                        if (write_file == 1) {
-                         postprocess_bs(alig->query_name, '+', alig->chromosome, start + i_seq + 2 - i_delec, XM_METHYLATED_CHG, new_strand, 1,bs_context->context_CHG);//Ricardo+2
+                         postprocess_bs(alig->query_name, '+', alig->chromosome, start + i_gen + inc, XM_METHYLATED_CHG, new_strand, 1,bs_context->context_CHG);//Ricardo+2
 
                          // Update the alignment methylation tag
                          bam_tag_str_append(tag_xm, XM_METHYLATED_CHG);
@@ -900,7 +940,7 @@ void add_metilation_status(array_list_t *array_list, bs_context_t *bs_context,
                      }
                      	else{
                      		  if (write_file == 1) {
-     							postprocess_bs(alig->query_name, '+', alig->chromosome, start + i_seq + 2 - i_delec, XM_METHYLATED_CHH, new_strand, 2,bs_context->context_CHH);//Ricardo + 2
+     							postprocess_bs(alig->query_name, '+', alig->chromosome, start + i_gen + inc, XM_METHYLATED_CHH, new_strand, 2,bs_context->context_CHH);//Ricardo + 2
 
      							// Update the alignment methylation tag
      							bam_tag_str_append(tag_xm, XM_METHYLATED_CHH);
@@ -913,7 +953,7 @@ void add_metilation_status(array_list_t *array_list, bs_context_t *bs_context,
                      	if (((i_seq-1 >= 0)&&(seq[i_seq-1]!='D')) && ((i_seq-2 >= 0)&&(seq[i_seq-2]!='D'))){
 
                        if (write_file == 1) {
-                         postprocess_bs(alig->query_name, '-', alig->chromosome, start + i_seq + 2 - i_delec, XM_UNMETHYLATED_CHG, new_strand, 1,bs_context->context_CHG);//Ricardo + 2
+                         postprocess_bs(alig->query_name, '-', alig->chromosome, start + i_gen + inc, XM_UNMETHYLATED_CHG, new_strand, 1,bs_context->context_CHG);//Ricardo + 2
 
                          // Update the alignment methylation tag
                          bam_tag_str_append(tag_xm, XM_UNMETHYLATED_CHG);
@@ -923,7 +963,7 @@ void add_metilation_status(array_list_t *array_list, bs_context_t *bs_context,
                      	}
                      	else{
                      		if (write_file == 1) {
-     						postprocess_bs(alig->query_name, '-', alig->chromosome, start + i_seq + 2 - i_delec, XM_UNMETHYLATED_CHH, new_strand, 2,bs_context->context_CHH);//Ricardo + 2
+     						postprocess_bs(alig->query_name, '-', alig->chromosome, start + i_gen + inc, XM_UNMETHYLATED_CHH, new_strand, 2,bs_context->context_CHH);//Ricardo + 2
 
      						// Update the alignment methylation tag
      						bam_tag_str_append(tag_xm, XM_UNMETHYLATED_CHH);
@@ -934,7 +974,7 @@ void add_metilation_status(array_list_t *array_list, bs_context_t *bs_context,
 
                      } /*else { //Mutation, Bismark discard it
                        if (write_file == 1) {
-                         postprocess_bs(alig->query_name, '.', alig->chromosome, start + i_seq + 2 - i_delec, XM_METHYLATED_MUT, alig->seq_strand, 3,bs_context->context_MUT);//Ricardo + 2
+                         postprocess_bs(alig->query_name, '.', alig->chromosome, start + i_seq + inc - i_delec, XM_METHYLATED_MUT, alig->seq_strand, 3,bs_context->context_MUT);//Ricardo + 2
 
                          // Update the alignment methylation tag
                          bam_tag_str_append(tag_xm, XM_METHYLATED_MUT);
@@ -948,7 +988,7 @@ void add_metilation_status(array_list_t *array_list, bs_context_t *bs_context,
                    } else {
                      if (seq[i_seq] == 'G') {
                        if (write_file == 1) {
-                         postprocess_bs(alig->query_name, '+', alig->chromosome, start + i_seq + 2 - i_delec, XM_METHYLATED_CHH, new_strand, 2,bs_context->context_CHH);//Ricardo + 2
+                         postprocess_bs(alig->query_name, '+', alig->chromosome, start + i_gen + inc, XM_METHYLATED_CHH, new_strand, 2,bs_context->context_CHH);//Ricardo + 2
 
                          // Update the alignment methylation tag
                          bam_tag_str_append(tag_xm, XM_METHYLATED_CHH);
@@ -958,7 +998,7 @@ void add_metilation_status(array_list_t *array_list, bs_context_t *bs_context,
                        bs_context->CHH_methyl++;
                      } else /*if (seq[i_seq] == 'A')*/ {
                        if (write_file == 1) {
-                         postprocess_bs(alig->query_name, '-', alig->chromosome, start + i_seq + 2 - i_delec, XM_UNMETHYLATED_CHH, new_strand, 2,bs_context->context_CHH);//Ricardo + 2
+                         postprocess_bs(alig->query_name, '-', alig->chromosome, start + i_gen + inc, XM_UNMETHYLATED_CHH, new_strand, 2,bs_context->context_CHH);//Ricardo + 2
 
                          // Update the alignment methylation tag
                          bam_tag_str_append(tag_xm, XM_UNMETHYLATED_CHH);
@@ -967,7 +1007,7 @@ void add_metilation_status(array_list_t *array_list, bs_context_t *bs_context,
                        bs_context->CHH_unmethyl++;
                      } /*else { //Mutation, Bismark discard it
                        if (write_file == 1) {
-                         postprocess_bs(alig->query_name, '.', alig->chromosome, start + i_seq + 2 - i_delec, XM_METHYLATED_MUT, alig->seq_strand, 3,bs_context->context_MUT);//Ricardo + 2
+                         postprocess_bs(alig->query_name, '.', alig->chromosome, start + i_seq + inc - i_delec, XM_METHYLATED_MUT, alig->seq_strand, 3,bs_context->context_MUT);//Ricardo + 2
 
                          // Update the alignment methylation tag
                          bam_tag_str_append(tag_xm, XM_METHYLATED_MUT);
@@ -1232,7 +1272,16 @@ void add_metilation_status(array_list_t *array_list, bs_context_t *bs_context,
       array_list_insert(tag_xr, alig->optional_tags);
       array_list_insert(tag_xm, alig->optional_tags);
 
-      free(seq);//RICARDO ??
+      if (seq != NULL)
+    	  free(seq);//RICARDO ??
+      if (workspace->add_status_seq_dup != NULL){
+    	 free(workspace->add_status_seq_dup);
+    	 workspace->add_status_seq_dup = NULL;
+      }
+      if (workspace->add_status_gen != NULL){
+    	  free(workspace->add_status_gen);
+    	  workspace->add_status_gen = NULL;
+      }
       //      free(gen);//RICARDO ??
     }
   }

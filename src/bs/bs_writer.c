@@ -403,7 +403,7 @@ int bs_writer(void *data) {
 		(float) (basic_st->num_mapped_reads*100)/(float)(basic_st->total_reads));
     writer_input->limit_print += 1000000;
   }
-
+  //printf("HOLA\n");
   if (mapping_batch) {
     mapping_batch_free(mapping_batch);
   }
